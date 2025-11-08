@@ -65,18 +65,27 @@ class ControllerExtensionModuleMLCalcSalon extends Controller {
 
         $json = array();
 
-        // Получаем список товаров с JAN='1'
-        $filter_data = array(
-            'filter_jan' => '1',
-            'start' => 0,
-            'limit' => 100
-        );
+        // Получаем список товаров с JAN='1' через прямой SQL запрос
+        $sql = "SELECT p.product_id, pd.name, p.price, p.tax_class_id, p.image,
+                       (SELECT price FROM " . DB_PREFIX . "product_special ps
+                        WHERE ps.product_id = p.product_id
+                        AND ps.customer_group_id = '" . (int)$this->config->get('config_customer_group_id') . "'
+                        AND ((ps.date_start = '0000-00-00' OR ps.date_start < NOW())
+                        AND (ps.date_end = '0000-00-00' OR ps.date_end > NOW()))
+                        ORDER BY ps.priority ASC, ps.price ASC LIMIT 1) as special
+                FROM " . DB_PREFIX . "product p
+                LEFT JOIN " . DB_PREFIX . "product_description pd ON (p.product_id = pd.product_id)
+                WHERE p.jan = '1'
+                AND p.status = '1'
+                AND pd.language_id = '" . (int)$this->config->get('config_language_id') . "'
+                ORDER BY pd.name ASC
+                LIMIT 100";
 
-        $results = $this->model_catalog_product->getProducts($filter_data);
+        $query = $this->db->query($sql);
 
         $products = array();
 
-        foreach ($results as $result) {
+        foreach ($query->rows as $result) {
             $price = $result['price'];
             $special = $result['special'];
 
@@ -96,7 +105,7 @@ class ControllerExtensionModuleMLCalcSalon extends Controller {
                 'name' => $result['name'],
                 'price' => $converted_price,
                 'price_formatted' => $this->currency->format($price_with_tax, $current_currency),
-                'image' => $this->model_tool_image->resize($result['image'] ?: 'no_image.png', 100, 100),
+                'image' => $this->model_tool_image->resize($result['image'] ? $result['image'] : 'no_image.png', 100, 100),
                 'href' => $this->url->link('product/product', 'product_id=' . $result['product_id'])
             );
         }

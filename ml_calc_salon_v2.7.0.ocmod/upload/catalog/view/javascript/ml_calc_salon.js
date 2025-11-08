@@ -37,27 +37,45 @@
 
     // Загрузка списка доступных товаров
     function loadAvailableProducts() {
+        console.log('[ML Salon Calc] Loading products...');
         $.ajax({
             url: 'index.php?route=extension/module/ml_calc_salon/getProducts',
             type: 'get',
             dataType: 'json',
             success: function(json) {
+                console.log('[ML Salon Calc] Products loaded:', json);
                 if (json.products) {
                     availableProducts = json.products;
+                    console.log('[ML Salon Calc] Available products count:', availableProducts.length);
                     populateProductSelector();
                 }
             },
-            error: function() {
-                console.error('[ML Salon Calc] Failed to load products');
+            error: function(xhr, status, error) {
+                console.error('[ML Salon Calc] Failed to load products:', error);
+                console.error('[ML Salon Calc] Status:', status);
+                console.error('[ML Salon Calc] Response:', xhr.responseText);
             }
         });
     }
 
     // Заполнение селектора товаров
     function populateProductSelector() {
+        console.log('[ML Salon Calc] Populating product selector...');
         var $selector = $('#product-selector');
+
+        if ($selector.length === 0) {
+            console.error('[ML Salon Calc] Product selector #product-selector not found!');
+            return;
+        }
+
         $selector.empty();
         $selector.append('<option value="">-- Выберите товар --</option>');
+
+        if (availableProducts.length === 0) {
+            $selector.append('<option value="" disabled>Нет доступных товаров (установите JAN=1)</option>');
+            console.warn('[ML Salon Calc] No products available. Make sure products have JAN="1"');
+            return;
+        }
 
         $.each(availableProducts, function(index, product) {
             // Проверяем, не добавлен ли уже этот товар
@@ -69,6 +87,8 @@
                 $selector.append('<option value="' + product.product_id + '" data-price="' + product.price + '" data-name="' + product.name + '" data-image="' + product.image + '">' + product.name + ' - ' + product.price_formatted + '</option>');
             }
         });
+
+        console.log('[ML Salon Calc] Selector populated with', $selector.find('option').length - 1, 'products');
     }
 
     // Загрузка корзины из LocalStorage
@@ -92,9 +112,13 @@
 
     // Настройка обработчиков событий
     function setupEventListeners() {
+        console.log('[ML Salon Calc] Setting up event listeners...');
+
         // Добавление товара из селектора
         $('#product-selector').on('change', function() {
+            console.log('[ML Salon Calc] Product selector changed');
             var productId = parseInt($(this).val());
+            console.log('[ML Salon Calc] Selected product ID:', productId);
             if (productId) {
                 addProductToCart(productId);
                 $(this).val('');
@@ -130,13 +154,18 @@
 
     // Добавление товара в корзину
     function addProductToCart(productId) {
+        console.log('[ML Salon Calc] Adding product to cart:', productId);
+
         var product = availableProducts.find(function(p) {
             return p.product_id === productId;
         });
 
         if (!product) {
+            console.error('[ML Salon Calc] Product not found:', productId);
             return;
         }
+
+        console.log('[ML Salon Calc] Product found:', product);
 
         var defaultClientsPerDay = parseInt($('#default-clients-per-day').val()) || 7;
         var defaultProcedureCost = parseInt($('#default-procedure-cost').val()) || 1000;
