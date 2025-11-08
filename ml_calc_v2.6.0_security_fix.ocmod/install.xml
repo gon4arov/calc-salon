@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<modification>
+    <name>ML Payback Calculator - Auto Integration</name>
+    <code>ml_payback_calculator_integration_2025</code>
+    <version>4.2.0</version>
+    <author>ML Team</author>
+    <link>https://github.com/mlteam/ml-payback-calculator</link>
+
+    <!-- Add calculator tab to navigation -->
+    <file path="catalog/view/theme/*/template/product/product.tpl">
+        <operation>
+            <search><![CDATA[            <li><a href="#tab-review" data-toggle="tab"><?php echo $tab_review; ?></a></li>
+]]></search>
+            <add position="before"><![CDATA[
+            <?php if (!empty($ml_calc)) { ?>
+            <li><a href="#tab-ml-calc" data-toggle="tab"><?php echo $tab_ml_calc; ?></a></li>
+            <?php } ?>
+]]></add>
+        </operation>
+        <operation>
+            <search><![CDATA[            <div class="tab-pane" id="tab-review">]]></search>
+            <add position="before"><![CDATA[
+            <?php if (!empty($ml_calc)) { ?>
+            <div class="tab-pane" id="tab-ml-calc">
+              <?php echo $ml_calc; ?>
+            </div>
+            <?php } ?>
+]]></add>
+        </operation>
+    </file>
+
+    <!-- Prepare calculator tab data in product controller -->
+    <file path="catalog/controller/product/product.php">
+        <operation>
+            <search><![CDATA[$data['content_bottom'] = $this->load->controller('common/content_bottom');]]></search>
+            <add position="before"><![CDATA[
+        $ml_calc_output = $this->load->controller('extension/module/ml_calc');
+
+        if ($ml_calc_output) {
+            $this->load->language('extension/module/ml_calc');
+            $data['tab_ml_calc'] = $this->language->get('tab_ml_calc');
+            $data['ml_calc'] = $ml_calc_output;
+        } else {
+            $data['ml_calc'] = '';
+        }
+]]></add>
+        </operation>
+    </file>
+
+    <!-- Add calculator scripts to footer -->
+    <file path="catalog/view/theme/*/template/common/footer.tpl">
+        <operation>
+            <search><![CDATA[</body>]]></search>
+            <add position="before"><![CDATA[
+<!-- ML Calculator Scripts -->
+<script src="catalog/view/javascript/ml_calc.js"></script>
+<script src="catalog/view/javascript/ml_calc_shortcode.js"></script>
+<!-- End ML Calculator Scripts -->
+]]></add>
+        </operation>
+    </file>
+
+    <!-- Add calculator CSS to all pages -->
+    <file path="catalog/view/theme/*/template/common/header.tpl">
+        <operation>
+            <search><![CDATA[</head>]]></search>
+            <add position="before"><![CDATA[
+<!-- ML Calculator CSS -->
+<link rel="stylesheet" href="catalog/view/theme/default/template/extension/module/css/ml_calc.css">
+<!-- End ML Calculator CSS -->
+]]></add>
+        </operation>
+    </file>
+
+</modification>
