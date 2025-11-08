@@ -2,7 +2,7 @@
 class ControllerExtensionModuleMLCalcSalon extends Controller {
     private $error = array();
 
-    const VERSION = '2.7.0';
+    const VERSION = '2.7.1';
 
     public function index() {
         $this->load->language('extension/module/ml_calc_salon');
