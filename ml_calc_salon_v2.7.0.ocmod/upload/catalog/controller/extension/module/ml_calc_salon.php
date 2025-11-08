@@ -101,7 +101,7 @@ class ControllerExtensionModuleMLCalcSalon extends Controller {
             $converted_price = $this->currency->convert($price_with_tax, 'USD', $current_currency);
 
             $products[] = array(
-                'product_id' => $result['product_id'],
+                'product_id' => (int)$result['product_id'],
                 'name' => $result['name'],
                 'price' => $converted_price,
                 'price_formatted' => $this->currency->format($price_with_tax, $current_currency),

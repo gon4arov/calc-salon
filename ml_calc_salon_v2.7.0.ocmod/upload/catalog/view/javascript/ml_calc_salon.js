@@ -155,13 +155,18 @@
     // Добавление товара в корзину
     function addProductToCart(productId) {
         console.log('[ML Salon Calc] Adding product to cart:', productId);
+        console.log('[ML Salon Calc] Available products:', availableProducts);
 
         var product = availableProducts.find(function(p) {
-            return p.product_id === productId;
+            return parseInt(p.product_id) === parseInt(productId);
         });
 
         if (!product) {
             console.error('[ML Salon Calc] Product not found:', productId);
+            console.error('[ML Salon Calc] Looking for product_id type:', typeof productId, 'value:', productId);
+            console.error('[ML Salon Calc] Available product IDs:', availableProducts.map(function(p) {
+                return {id: p.product_id, type: typeof p.product_id};
+            }));
             return;
         }
 
