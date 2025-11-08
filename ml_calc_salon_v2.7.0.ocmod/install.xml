@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<modification>
+    <name>ML Salon Calculator v2.7.0</name>
+    <code>ml_calc_salon</code>
+    <version>2.7.0</version>
+    <author>MasterLaser</author>
+    <link>https://www.masterlaser.ua/</link>
+
+    <!-- Добавление кнопки "Добавить в калькулятор салона" на страницу товара -->
+    <file path="catalog/view/theme/*/template/product/product.tpl">
+        <operation>
+            <search><![CDATA[<button type="button" id="button-cart"]]></search>
+            <add position="before"><![CDATA[
+<?php if ($jan == '1') { ?>
+<a href="index.php?route=extension/module/ml_calc_salon" class="btn btn-info btn-block" style="margin-bottom: 10px;">
+    <i class="fa fa-calculator"></i> Добавить в калькулятор салона
+</a>
+<?php } ?>
+            ]]></add>
+        </operation>
+    </file>
+
+    <!-- Альтернативная модификация для тем, где кнопка корзины имеет другую структуру -->
+    <file path="catalog/view/theme/*/template/product/product.tpl">
+        <operation error="skip">
+            <search><![CDATA[<div id="product">]]></search>
+            <add position="after"><![CDATA[
+<script>
+// Добавление кнопки для калькулятора салона через JS (если JAN = '1')
+(function() {
+    var jan = '<?php echo $jan; ?>';
+    if (jan === '1') {
+        var productId = '<?php echo $product_id; ?>';
+        var calcUrl = 'index.php?route=extension/module/ml_calc_salon&product_id=' + productId;
+
+        // Поиск кнопки "Добавить в корзину" и вставка перед ней
+        var cartButton = document.querySelector('#button-cart, .button-cart, [id*="cart"]');
+        if (cartButton && cartButton.parentNode) {
+            var salonBtn = document.createElement('a');
+            salonBtn.href = calcUrl;
+            salonBtn.className = 'btn btn-info btn-block ml-calc-salon-btn';
+            salonBtn.style.marginBottom = '10px';
+            salonBtn.innerHTML = '<i class="fa fa-calculator"></i> Добавить в калькулятор салона';
+
+            cartButton.parentNode.insertBefore(salonBtn, cartButton);
+        }
+    }
+})();
+</script>
+            ]]></add>
+        </operation>
+    </file>
+
+</modification>

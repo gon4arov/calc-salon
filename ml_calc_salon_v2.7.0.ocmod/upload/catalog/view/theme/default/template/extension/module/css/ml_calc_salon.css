@@ -1,0 +1,385 @@
+/* ML Salon Calculator Styles v2.7.0 */
+
+.ml-calc-salon-title {
+    color: #007bff;
+    font-size: 32px;
+    font-weight: bold;
+    text-align: center;
+    margin: 30px 0 20px;
+    text-transform: uppercase;
+}
+
+.ml-calc-salon-wrapper {
+    background: #ffffff;
+    padding: 40px;
+    margin: 30px 0;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Корзина товаров */
+.ml-calc-salon-cart {
+    margin-bottom: 30px;
+}
+
+.ml-calc-salon-cart h3 {
+    color: #333;
+    font-size: 24px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #007bff;
+    padding-bottom: 10px;
+}
+
+.salon-products-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.no-products {
+    text-align: center;
+    color: #999;
+    padding: 40px 0;
+    font-size: 16px;
+}
+
+.salon-product-card {
+    background: #f8f9fa;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.salon-product-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.salon-product-card .product-image {
+    text-align: center;
+}
+
+.salon-product-card .product-image img {
+    max-width: 100px;
+    height: auto;
+    border-radius: 8px;
+}
+
+.salon-product-card .product-info {
+    text-align: center;
+}
+
+.salon-product-card .product-name {
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 8px;
+}
+
+.salon-product-card .product-price {
+    font-size: 20px;
+    font-weight: bold;
+    color: #28a745;
+}
+
+.salon-product-card .product-params {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.salon-product-card .param-field {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.salon-product-card .param-field label {
+    font-size: 14px;
+    color: #555;
+    font-weight: 500;
+}
+
+.salon-product-card .param-value {
+    font-size: 18px;
+    font-weight: bold;
+    color: #007bff;
+    text-align: center;
+    margin-bottom: 5px;
+}
+
+.salon-product-card .remove-product-btn {
+    margin-top: 10px;
+}
+
+.ml-calc-salon-add-product {
+    margin-top: 20px;
+}
+
+.ml-calc-salon-add-product select {
+    width: 100%;
+    max-width: 400px;
+    padding: 10px;
+    font-size: 14px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+/* Общие параметры */
+.ml-calc-salon-common-params {
+    margin-bottom: 30px;
+    padding: 20px;
+    background: #f0f8ff;
+    border-radius: 8px;
+}
+
+.ml-calc-salon-common-params h3 {
+    color: #333;
+    font-size: 24px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #007bff;
+    padding-bottom: 10px;
+}
+
+.ml-calc-row {
+    display: flex;
+    gap: 30px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.ml-calc-field {
+    flex: 1;
+    min-width: 250px;
+}
+
+.ml-calc-field label {
+    display: block;
+    font-size: 14px;
+    color: #333;
+    margin-bottom: 10px;
+    font-weight: 500;
+}
+
+.ml-calc-value {
+    font-size: 24px;
+    font-weight: bold;
+    color: #007bff;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+/* Слайдеры */
+.ml-calc-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 8px;
+    border-radius: 8px;
+    background: #ddd;
+    outline: none;
+    cursor: pointer;
+    --progress: 0%;
+}
+
+.ml-calc-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #007bff;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    margin-top: -8px;
+}
+
+.ml-calc-slider::-webkit-slider-runnable-track {
+    height: 8px;
+    background: linear-gradient(to right, #007bff 0%, #007bff var(--progress), #ddd var(--progress), #ddd 100%);
+    border-radius: 8px;
+}
+
+.ml-calc-slider::-moz-range-thumb {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: #007bff;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.ml-calc-slider::-moz-range-track {
+    height: 8px;
+    background: #ddd;
+    border-radius: 8px;
+}
+
+/* Кнопки */
+.ml-calc-salon-actions {
+    text-align: center;
+    margin: 30px 0;
+}
+
+.ml-calc-salon-actions button {
+    margin: 0 10px;
+}
+
+/* Результаты */
+.ml-calc-salon-results {
+    margin-top: 40px;
+    padding: 30px;
+    background: #f0fff0;
+    border: 2px solid #28a745;
+    border-radius: 10px;
+}
+
+.ml-calc-salon-results h3 {
+    color: #28a745;
+    font-size: 28px;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.ml-calc-salon-results h4 {
+    color: #333;
+    font-size: 22px;
+    margin: 30px 0 15px;
+    border-bottom: 2px solid #28a745;
+    padding-bottom: 10px;
+}
+
+.ml-calc-salon-total-results {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.result-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.result-label {
+    font-size: 18px;
+    color: #555;
+    font-weight: 500;
+}
+
+.result-value {
+    font-size: 24px;
+    font-weight: bold;
+    color: #28a745;
+}
+
+/* Результаты по товарам */
+.ml-calc-salon-product-results {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+.product-result-card {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.product-result-card h5 {
+    color: #333;
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #e9ecef;
+    padding-bottom: 10px;
+}
+
+.product-result-card .result-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    font-size: 14px;
+}
+
+.product-result-card .result-row.highlight {
+    background: #fff3cd;
+    padding: 12px 10px;
+    margin-top: 10px;
+    border-radius: 5px;
+    font-weight: 600;
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .ml-calc-salon-wrapper {
+        padding: 20px;
+    }
+
+    .ml-calc-salon-title {
+        font-size: 24px;
+    }
+
+    .salon-products-list {
+        grid-template-columns: 1fr;
+    }
+
+    .ml-calc-row {
+        flex-direction: column;
+        gap: 20px;
+    }
+
+    .ml-calc-field {
+        min-width: 100%;
+    }
+
+    .ml-calc-salon-product-results {
+        grid-template-columns: 1fr;
+    }
+
+    .result-item {
+        flex-direction: column;
+        gap: 10px;
+        align-items: flex-start;
+    }
+
+    .result-value {
+        font-size: 20px;
+    }
+
+    /* Увеличенные ползунки для мобильных */
+    .ml-calc-slider {
+        height: 10px;
+    }
+
+    .ml-calc-slider::-webkit-slider-thumb {
+        width: 32px;
+        height: 32px;
+        margin-top: -11px;
+    }
+
+    .ml-calc-slider::-moz-range-thumb {
+        width: 32px;
+        height: 32px;
+    }
+
+    .ml-calc-slider::-webkit-slider-runnable-track {
+        height: 10px;
+    }
+
+    .ml-calc-slider::-moz-range-track {
+        height: 10px;
+    }
+}
