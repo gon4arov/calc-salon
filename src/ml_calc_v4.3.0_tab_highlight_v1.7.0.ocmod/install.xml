@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<modification>
+    <name>ML Payback Calculator</name>
+    <code>ml_payback_calculator_integration_2025</code>
+    <version>1.7.0</version>
+    <author>Oleksandr Honcharov</author>
+    <link>https://medicalaser.com.ua</link>
+
+    <!-- Add calculator tab to navigation -->
+    <file path="catalog/view/theme/*/template/product/product.tpl">
+        <operation>
+            <search><![CDATA[            <li><a href="#tab-review" data-toggle="tab"><?php echo $tab_review; ?></a></li>
+]]></search>
+            <add position="before"><![CDATA[
+            <?php if (!empty($ml_calc)) { ?>
+            <li class="<?php echo isset($ml_calc_tab_class) ? $ml_calc_tab_class : ''; ?>"><a href="#tab-ml-calc" data-toggle="tab"><?php echo $tab_ml_calc; ?></a></li>
+            <?php } ?>
+]]></add>
+        </operation>
+        <operation>
+            <search><![CDATA[            <div class="tab-pane" id="tab-review">]]></search>
+            <add position="before"><![CDATA[
+            <?php if (!empty($ml_calc)) { ?>
+            <div class="tab-pane" id="tab-ml-calc">
+              <?php echo $ml_calc; ?>
+            </div>
+            <?php } ?>
+]]></add>
+        </operation>
+    </file>
+
+    <!-- Prepare calculator tab data in product controller -->
+    <file path="catalog/controller/product/product.php">
+        <operation>
+            <search><![CDATA[$data['content_bottom'] = $this->load->controller('common/content_bottom');]]></search>
+            <add position="before"><![CDATA[
+        $ml_calc_output = $this->load->controller('extension/module/ml_calc', array('show_product_summary' => true));
+
+        if ($ml_calc_output) {
+            $this->load->language('extension/module/ml_calc');
+            $data['tab_ml_calc'] = $this->language->get('tab_ml_calc');
+            $data['ml_calc'] = $ml_calc_output;
+
+            // Определяем класс для выделения вкладки калькулятора
+            $tab_highlight = $this->config->get('module_ml_calc_tab_highlight');
+            if ($tab_highlight == 'red') {
+                $data['ml_calc_tab_class'] = 'ml-calc-tab-red';
+            } elseif ($tab_highlight == 'yellow') {
+                $data['ml_calc_tab_class'] = 'ml-calc-tab-yellow';
+            } elseif ($tab_highlight == 'new_badge') {
+                $data['ml_calc_tab_class'] = 'ml-calc-tab-new-badge';
+            } else {
+                $data['ml_calc_tab_class'] = '';
+            }
+
+            // Кнопка калькулятора
+            $data['ml_calc_show_button'] = $this->config->get('module_ml_calc_show_calc_button');
+            $data['ml_calc_button_text'] = $this->language->get('button_calculate_payback');
+            $data['ml_calc_button_bg_color'] = $this->config->get('module_ml_calc_button_bg_color') ? $this->config->get('module_ml_calc_button_bg_color') : '#4169E1';
+            $data['ml_calc_button_text_color'] = $this->config->get('module_ml_calc_button_text_color') ? $this->config->get('module_ml_calc_button_text_color') : '#ffffff';
+        } else {
+            $data['ml_calc'] = '';
+            $data['ml_calc_show_button'] = false;
+        }
+]]></add>
+        </operation>
+    </file>
+
+    <!-- Add calculator button after add to cart button -->
+    <file path="catalog/view/theme/*/template/product/product.tpl">
+        <operation>
+            <search><![CDATA[            <button type="button" id="button-cart" data-loading-text="<?php echo $text_loading; ?>" class="btn btn-primary btn-lg btn-block"><?php echo $button_cart; ?></button>]]></search>
+            <add position="after"><![CDATA[
+            <?php if (!empty($ml_calc_show_button)) { ?>
+            <button type="button" id="ml-calc-open-tab" class="btn btn-lg btn-block ml-calc-open-button" style="margin-top: 10px; background-color: <?php echo $ml_calc_button_bg_color; ?> !important; border-color: <?php echo $ml_calc_button_bg_color; ?> !important; color: <?php echo $ml_calc_button_text_color; ?> !important;">
+              <i class="fa fa-calculator"></i> <?php echo $ml_calc_button_text; ?>
+            </button>
+            <?php } ?>
+]]></add>
+        </operation>
+    </file>
+
+    <!-- Add calculator scripts to footer -->
+    <file path="catalog/view/theme/*/template/common/footer.tpl">
+        <operation>
+            <search><![CDATA[</body>]]></search>
+            <add position="before"><![CDATA[
+<!-- ML Calculator Scripts -->
+<script src="catalog/view/javascript/ml_calc.js"></script>
+<script src="catalog/view/javascript/ml_calc_shortcode.js"></script>
+<!-- End ML Calculator Scripts -->
+]]></add>
+        </operation>
+    </file>
+
+    <!-- Add calculator CSS to all pages -->
+    <file path="catalog/view/theme/*/template/common/header.tpl">
+        <operation>
+            <search><![CDATA[</head>]]></search>
+            <add position="before"><![CDATA[
+<!-- ML Calculator CSS -->
+<link rel="stylesheet" href="catalog/view/theme/default/template/extension/module/css/ml_calc.css">
+<!-- End ML Calculator CSS -->
+]]></add>
+        </operation>
+    </file>
+
+</modification>
