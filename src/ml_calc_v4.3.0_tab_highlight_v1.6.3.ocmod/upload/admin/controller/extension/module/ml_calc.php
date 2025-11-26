@@ -866,6 +866,13 @@ class ControllerExtensionModuleMlCalc extends Controller {
 
             return number_format((float)$value, 0, '.', ' ');
         };
+        $formatPayback = function($value) {
+            if ($value === null) {
+                return '-';
+            }
+
+            return number_format((float)$value, 1, '.', ' ') . ' мес';
+        };
 
         $groupIndexMap = array();
         $groupIndexCounter = 0;
