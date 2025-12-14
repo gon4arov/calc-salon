@@ -43,6 +43,9 @@ window.MLCalc.init = function(wrapper) {
     var currencyRate = 1;
     var currencyCode = '';
     var specialToRegularRatio = 1;
+    var lastCalculationResult = null;
+    var lastCalculationPayload = null;
+    var emailTexts = window.mlCalcEmailTexts || {};
 
     if ($productPriceInput.length) {
         var dataBasePrice = parseFloat($productPriceInput.data('priceBase'));
@@ -102,6 +105,35 @@ window.MLCalc.init = function(wrapper) {
         } catch (e) {
             return Math.round(value).toLocaleString();
         }
+    }
+
+    function getCurrentInputs() {
+        var utilitiesSlider = find('#utilities-slider');
+        return {
+            productPrice: parseFloat(find('#ml-product-price').val()),
+            productPriceRegular: parseFloat(find('#ml-product-price').attr('data-price-regular')) || 0,
+            clientsPerDay: parseInt(find('#clients-slider').val(), 10),
+            procedureCost: parseFloat(find('#cost-slider').val()),
+            workingDays: parseInt(find('#days-slider').val(), 10),
+            rent: parseFloat(find('#rent-slider').val()),
+            utilities: utilitiesSlider.length ? parseFloat(utilitiesSlider.val()) : 0,
+            masterPercent: parseFloat(find('#percent-slider').val())
+        };
+    }
+
+    function payloadEquals(a, b) {
+        if (!a || !b) {
+            return false;
+        }
+
+        return a.productPrice === b.productPrice &&
+            a.productPriceRegular === b.productPriceRegular &&
+            a.clientsPerDay === b.clientsPerDay &&
+            a.procedureCost === b.procedureCost &&
+            a.workingDays === b.workingDays &&
+            a.rent === b.rent &&
+            a.utilities === b.utilities &&
+            a.masterPercent === b.masterPercent;
     }
 
     function getOptionScope() {
@@ -445,7 +477,7 @@ window.MLCalc.init = function(wrapper) {
         var rent = parseFloat(find('#rent-slider').val());
         var utilitiesSlider = find('#utilities-slider');
         var utilities = utilitiesSlider.length ? parseFloat(utilitiesSlider.val()) : 0;
-        var masterPercent = parseFloat(find('#percent-slider').val());
+        var masterPercent = payload.masterPercent;
 
         var newValue = explicitNewValue;
         if (typeof newValue === 'undefined') {
@@ -526,6 +558,141 @@ window.MLCalc.init = function(wrapper) {
         calculatePayback();
         saveStatistics('master_percent', parseFloat($(this).val()));
     });
+
+    // Отправка расчета на email
+    function setEmailStatus(message, type) {
+        var $status = find('#ml-calc-email-status');
+        if (!$status.length) {
+            return;
+        }
+
+        $status.removeClass('ml-calc-status--error ml-calc-status--success ml-calc-status--info');
+
+        if (!message) {
+            $status.text('').hide();
+            return;
+        }
+
+        var className = 'ml-calc-status--info';
+        if (type === 'error') {
+            className = 'ml-calc-status--error';
+        } else if (type === 'success') {
+            className = 'ml-calc-status--success';
+        }
+
+        $status.addClass(className).text(message).show();
+    }
+
+    function setSendButtonLoading(isLoading) {
+        var $button = find('#ml-calc-email-send');
+        if (!$button.length) {
+            return;
+        }
+
+        if (isLoading) {
+            if (!$button.data('originalText')) {
+                $button.data('originalText', $button.text());
+            }
+            $button.prop('disabled', true);
+            $button.text(emailTexts.sending || $button.data('originalText'));
+        } else {
+            var originalText = $button.data('originalText');
+            if (originalText) {
+                $button.text(originalText);
+            }
+            $button.prop('disabled', false);
+        }
+    }
+
+    function isValidEmail(email) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    }
+
+    function sendCalculationEmail() {
+        if (!productId) {
+            setEmailStatus(emailTexts.errorCalculation || 'Product is not available for calculation.', 'error');
+            return;
+        }
+
+        var $emailInput = find('#ml-calc-email-input');
+        if (!$emailInput.length) {
+            return;
+        }
+
+        var email = ($emailInput.val() || '').trim();
+
+        if (!email) {
+            setEmailStatus(emailTexts.errorEmailRequired || 'Введите email.', 'error');
+            $emailInput.focus();
+            return;
+        }
+
+        if (!isValidEmail(email)) {
+            setEmailStatus(emailTexts.errorEmailInvalid || 'Введите корректный email.', 'error');
+            $emailInput.focus();
+            return;
+        }
+
+        var payload = getCurrentInputs();
+        if (isNaN(payload.utilities)) {
+            payload.utilities = 0;
+        }
+
+        var performSend = function() {
+            $.ajax({
+                url: 'index.php?route=extension/module/ml_calc/sendEmail',
+                type: 'post',
+                data: {
+                    email: email,
+                    product_id: productId,
+                    product_price: payload.productPrice,
+                    product_price_regular: payload.productPriceRegular,
+                    clients_per_day: payload.clientsPerDay,
+                    procedure_cost: payload.procedureCost,
+                    working_days: payload.workingDays,
+                    rent: payload.rent,
+                    utilities: payload.utilities,
+                    master_percent: payload.masterPercent
+                },
+                dataType: 'json',
+                success: function(json) {
+                    if (json && json.success) {
+                        var successTemplate = emailTexts.success || '';
+                        var message = successTemplate && successTemplate.indexOf('%s') !== -1 ? successTemplate.replace('%s', email) : (successTemplate || 'Расчёт отправлен.');
+                        setEmailStatus(message, 'success');
+                        $emailInput.val('');
+                    } else {
+                        setEmailStatus((json && json.error) ? json.error : (emailTexts.errorSend || 'Не удалось отправить расчёт.'), 'error');
+                    }
+                },
+                error: function(xhr, status) {
+                    var msg = emailTexts.errorSend || 'Не удалось отправить расчёт.';
+                    setEmailStatus(msg, 'error');
+                },
+                complete: function() {
+                    setSendButtonLoading(false);
+                }
+            });
+        };
+
+        setSendButtonLoading(true);
+        setEmailStatus(emailTexts.sending || '', 'info');
+
+        var hasFreshCalculation = lastCalculationResult && lastCalculationResult.success && payloadEquals(payload, lastCalculationPayload);
+
+        if (hasFreshCalculation) {
+            performSend();
+        } else {
+            calculatePayback(function(json) {
+                if (json && json.success) {
+                    performSend();
+                } else {
+                    setSendButtonLoading(false);
+                    setEmailStatus((json && json.error) ? json.error : (emailTexts.errorCalculation || ''), 'error');
+                }
+            });
+        }
+    }
 
     // Функция генерации формул для тултипов
     function updateResultTooltips(json, clients, cost, days, rent, utilities, percent, price) {
@@ -639,7 +806,7 @@ window.MLCalc.init = function(wrapper) {
     }
 
     // Функция расчета
-    function calculatePayback() {
+    function calculatePayback(afterComplete) {
         // Отменяем предыдущий запрос, если он еще выполняется
         if (currentAjaxRequest) {
             currentAjaxRequest.abort();
@@ -651,19 +818,23 @@ window.MLCalc.init = function(wrapper) {
             $resultBlock.addClass('ml-calc-result--loading');
         }
 
-        var productPrice = parseFloat(find('#ml-product-price').val());
-        var productPriceRegular = parseFloat(find('#ml-product-price').attr('data-price-regular')) || 0;
-        var clientsPerDay = parseInt(find('#clients-slider').val());
-        var procedureCost = parseFloat(find('#cost-slider').val());
-        var workingDays = parseInt(find('#days-slider').val());
-        var rent = parseFloat(find('#rent-slider').val());
-        var utilitiesSlider = find('#utilities-slider');
-        var utilities = utilitiesSlider.length ? parseFloat(utilitiesSlider.val()) : 0;
+        var payload = getCurrentInputs();
+        var productPrice = payload.productPrice;
+        var productPriceRegular = payload.productPriceRegular;
+        var clientsPerDay = payload.clientsPerDay;
+        var procedureCost = payload.procedureCost;
+        var workingDays = payload.workingDays;
+        var rent = payload.rent;
+        var utilities = payload.utilities;
 
         if (isNaN(utilities)) {
             utilities = 0;
+            payload.utilities = 0;
         }
         var masterPercent = parseFloat(find('#percent-slider').val());
+
+        lastCalculationResult = null;
+        lastCalculationPayload = null;
 
         currentAjaxRequest = $.ajax({
             url: 'index.php?route=extension/module/ml_calc/calculate',
@@ -732,13 +903,16 @@ window.MLCalc.init = function(wrapper) {
                         });
                     }
 
-                    find('#ml-calc-result').slideDown();
+                        find('#ml-calc-result').slideDown();
 
-                    // Добавляем тултипы с формулами, если включено
-                    var showResultTooltips = wrapper.getAttribute('data-show-result-tooltips') === '1';
-                    if (showResultTooltips && json.payback_days_raw) {
-                        updateResultTooltips(json, clientsPerDay, procedureCost, workingDays, rent, utilities, masterPercent, productPrice);
-                    }
+                        // Добавляем тултипы с формулами, если включено
+                        var showResultTooltips = wrapper.getAttribute('data-show-result-tooltips') === '1';
+                        if (showResultTooltips && json.payback_days_raw) {
+                            updateResultTooltips(json, clientsPerDay, procedureCost, workingDays, rent, utilities, masterPercent, productPrice);
+                        }
+
+                        lastCalculationResult = json;
+                        lastCalculationPayload = payload;
                     } else {
                         var errorMsg = json.error || 'Произошла ошибка при расчете';
                         console.error('[ML Calc] Calculation error:', errorMsg);
@@ -752,6 +926,12 @@ window.MLCalc.init = function(wrapper) {
                         setTimeout(function() {
                             $resultBlock.removeClass('ml-calc-result--loading');
                         }, 400);
+                    }
+
+                    currentAjaxRequest = null;
+
+                    if (typeof afterComplete === 'function') {
+                        afterComplete(json);
                     }
                 }
             },
@@ -785,9 +965,24 @@ window.MLCalc.init = function(wrapper) {
                     userMsg = 'Ошибка сервера. Попробуйте позже.';
                 }
                 alert(userMsg);
+
+                currentAjaxRequest = null;
+
+                if (typeof afterComplete === 'function') {
+                    afterComplete(null);
+                }
             }
         });
     }
+
+    find('#ml-calc-email-send').on('click', function(e) {
+        e.preventDefault();
+        sendCalculationEmail();
+    });
+
+    find('#ml-calc-email-input').on('input', function() {
+        setEmailStatus('', '');
+    });
 
     var optionSyncConfigured = setupOptionPriceSync();
 

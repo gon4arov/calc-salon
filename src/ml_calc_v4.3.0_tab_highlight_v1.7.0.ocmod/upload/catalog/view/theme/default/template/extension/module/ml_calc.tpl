@@ -205,6 +205,62 @@
     border-color: <?php echo $result_border_color; ?>;
     padding: 30px 60px;
 }
+.ml-calc-email {
+    margin-top: 18px;
+    padding: 14px 16px;
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+.ml-calc-email__label {
+    font-weight: 600;
+    color: <?php echo $text_color; ?>;
+}
+.ml-calc-email__controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+}
+.ml-calc-email input[type="email"] {
+    min-width: 240px;
+    padding: 8px 10px;
+    border: 1px solid #ced4da;
+    border-radius: 6px;
+    font-size: 14px;
+}
+.ml-calc-email button {
+    background: <?php echo $button_color; ?>;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-size: <?php echo $button_font_size; ?>px;
+    cursor: pointer;
+    transition: transform 0.1s ease, box-shadow 0.2s ease;
+}
+.ml-calc-email button:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+.ml-calc-email__status {
+    display: none;
+    font-size: 13px;
+    line-height: 1.4;
+}
+.ml-calc-status--success {
+    color: #28a745;
+}
+.ml-calc-status--error {
+    color: #dc3545;
+}
+.ml-calc-status--info {
+    color: #6c757d;
+}
 .ml-calc-product-options {
     margin-top: 15px;
     display: flex;
@@ -291,6 +347,21 @@
         font-size: <?php echo max(12, $mobile_result_font_size - 2); ?>px;
         padding: 4px 8px;
     }
+    .ml-calc-email {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .ml-calc-email__controls {
+        width: 100%;
+    }
+    .ml-calc-email input[type="email"] {
+        width: 100%;
+        min-width: unset;
+    }
+    .ml-calc-email button {
+        width: 100%;
+        text-align: center;
+    }
     /* Tooltips на мобильных - по клику */
     .ml-calc-tooltip::after {
         max-width: 200px;
@@ -313,6 +384,15 @@ window.mlCalcFormulaLabels = {
     annualProfit: <?php echo json_encode($formula_annual_profit); ?>,
     regularPrice: <?php echo json_encode($formula_regular_price); ?>,
     perMonth: <?php echo json_encode($formula_per_month); ?>
+};
+
+window.mlCalcEmailTexts = {
+    sending: <?php echo json_encode($text_email_sending); ?>,
+    success: <?php echo json_encode($text_email_success); ?>,
+    errorEmailRequired: <?php echo json_encode($error_email_required); ?>,
+    errorEmailInvalid: <?php echo json_encode($error_email_invalid); ?>,
+    errorCalculation: <?php echo json_encode($error_email_calculation); ?>,
+    errorSend: <?php echo json_encode($error_email_send); ?>
 };
 </script>
 <div class="ml-calc-wrapper" data-show-regular-payback="<?php echo $show_regular_payback ? '1' : '0'; ?>" data-show-result-tooltips="<?php echo $show_result_tooltips ? '1' : '0'; ?>">
@@ -447,6 +527,18 @@ window.mlCalcFormulaLabels = {
                 </div>
             </div>
         </div>
+    </div>
+
+    <div class="ml-calc-email">
+        <div class="ml-calc-email__label"><?php echo $text_email_lead; ?></div>
+        <div class="ml-calc-email__controls">
+            <input type="email"
+                   id="ml-calc-email-input"
+                   placeholder="<?php echo $entry_email; ?>"
+                   aria-label="<?php echo $entry_email; ?>">
+            <button type="button" id="ml-calc-email-send"><?php echo $button_send_email; ?></button>
+        </div>
+        <div class="ml-calc-email__status" id="ml-calc-email-status"></div>
     </div>
 
     <div class="ml-calc-container">

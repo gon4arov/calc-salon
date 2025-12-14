@@ -27,6 +27,15 @@ $_['text_shortcode_title_alt3'] = 'Investment payback calculation';
 $_['text_select_product'] = 'Select a product';
 $_['text_no_products'] = 'No products available for calculation.';
 $_['text_loading_error'] = 'Unable to load calculator. Please try again.';
+$_['text_email_lead'] = 'Send these results to your email';
+$_['text_email_sending'] = 'Sending the calculation...';
+$_['text_email_success'] = 'We sent the calculation to %s.';
+$_['text_email_subject'] = 'Payback calculation for %s';
+$_['text_email_subject_generic'] = 'your selected product';
+$_['text_email_intro'] = 'Here is your payback calculation for %s:';
+$_['text_email_inputs'] = 'Your input parameters:';
+$_['text_email_footer'] = 'Message sent automatically from %s.';
+$_['button_send_email'] = 'Send calculation';
 
 // Tab
 $_['tab_ml_calc']      = 'Payback Calculator';
@@ -38,6 +47,7 @@ $_['entry_working_days']        = 'Working Days per Month';
 $_['entry_rent']                = 'Rent (UAH)';
 $_['entry_utilities']           = 'Utilities (UAH)';
 $_['entry_master_percent']      = 'Master Percentage (%)';
+$_['entry_email']               = 'Email for the calculation';
 
 // Error
 $_['error_negative_profit']     = 'Warning: Net profit is negative! Please adjust your parameters.';
@@ -49,6 +59,11 @@ $_['error_rent_range'] = 'Rent must be between 0 and 50000.';
 $_['error_utilities_range'] = 'Utilities must be between 0 and 10000.';
 $_['error_master_percent_range'] = 'Master commission must be between 0 and 50.';
 $_['error_product_price'] = 'Product price must be greater than 0.';
+$_['error_email_required'] = 'Please enter your email.';
+$_['error_email_invalid'] = 'Please enter a valid email address.';
+$_['error_email_calculation'] = 'Please run the calculation before sending.';
+$_['error_email_product'] = 'Product was not found for this calculation.';
+$_['error_email_send'] = 'Could not send the email. Please try again.';
 
 // Tooltip formula labels
 $_['formula_daily_income'] = 'Daily income';

@@ -29,6 +29,15 @@ class ControllerExtensionModuleMLCalc extends Controller {
         $data['entry_rent'] = $this->language->get('entry_rent');
         $data['entry_utilities'] = $this->language->get('entry_utilities');
         $data['entry_master_percent'] = $this->language->get('entry_master_percent');
+        $data['entry_email'] = $this->language->get('entry_email');
+        $data['text_email_lead'] = $this->language->get('text_email_lead');
+        $data['button_send_email'] = $this->language->get('button_send_email');
+        $data['text_email_sending'] = $this->language->get('text_email_sending');
+        $data['text_email_success'] = $this->language->get('text_email_success');
+        $data['error_email_required'] = $this->language->get('error_email_required');
+        $data['error_email_invalid'] = $this->language->get('error_email_invalid');
+        $data['error_email_calculation'] = $this->language->get('error_email_calculation');
+        $data['error_email_send'] = $this->language->get('error_email_send');
 
         // Языковые строки для формул тултипов
         $data['formula_daily_income'] = $this->language->get('formula_daily_income');
@@ -306,148 +315,145 @@ class ControllerExtensionModuleMLCalc extends Controller {
             return;
         }
 
-        if (isset($this->request->post['product_price']) &&
-            isset($this->request->post['clients_per_day']) &&
-            isset($this->request->post['procedure_cost']) &&
-            isset($this->request->post['working_days']) &&
-            isset($this->request->post['rent']) &&
-            isset($this->request->post['master_percent'])) {
+        $json = $this->buildCalculationResult($this->request->post);
 
-            $product_price = (float)$this->request->post['product_price'];
-            $product_price_regular = isset($this->request->post['product_price_regular']) ? (float)$this->request->post['product_price_regular'] : 0;
-            $clients_per_day = (int)$this->request->post['clients_per_day'];
-            $procedure_cost = (float)$this->request->post['procedure_cost'];
-            $working_days = (int)$this->request->post['working_days'];
-            $rent = (float)$this->request->post['rent'];
-            $utilities = isset($this->request->post['utilities']) ? (float)$this->request->post['utilities'] : 0.0;
-            $master_percent = (float)$this->request->post['master_percent'];
+        $this->response->addHeader('Content-Type: application/json');
+        $this->response->setOutput(json_encode($json));
+    }
 
-            // Валидация входных данных
-            if ($clients_per_day < 1 || $clients_per_day > 20) {
-                $json['success'] = false;
-                $json['error'] = $this->language->get('error_clients_per_day_range');
-                $this->response->addHeader('Content-Type: application/json');
-                $this->response->setOutput(json_encode($json));
-                return;
-            }
+    public function sendEmail() {
+        $this->load->language('extension/module/ml_calc');
 
-        if ($procedure_cost < 100 || $procedure_cost > 6000) {
-                $json['success'] = false;
-                $json['error'] = $this->language->get('error_procedure_cost_range');
-                $this->response->addHeader('Content-Type: application/json');
-                $this->response->setOutput(json_encode($json));
-                return;
-            }
+        $json = array('success' => false);
 
-            if ($working_days < 1 || $working_days > 31) {
-                $json['success'] = false;
-                $json['error'] = $this->language->get('error_working_days_range');
-                $this->response->addHeader('Content-Type: application/json');
-                $this->response->setOutput(json_encode($json));
-                return;
-            }
+        if ($this->request->server['REQUEST_METHOD'] !== 'POST') {
+            $json['error'] = 'Invalid request';
+            $this->response->addHeader('Content-Type: application/json');
+            $this->response->setOutput(json_encode($json));
+            return;
+        }
 
-            if ($rent < 0 || $rent > 50000) {
-                $json['success'] = false;
-                $json['error'] = $this->language->get('error_rent_range');
-                $this->response->addHeader('Content-Type: application/json');
-                $this->response->setOutput(json_encode($json));
-                return;
-            }
+        // CSRF защита: проверка HTTP Referer
+        $referer_valid = false;
+        if (isset($this->request->server['HTTP_REFERER'])) {
+            $referer_host = parse_url($this->request->server['HTTP_REFERER'], PHP_URL_HOST);
+            $current_host = $this->request->server['HTTP_HOST'];
+            $referer_valid = ($referer_host === $current_host);
+        }
 
-            if ($utilities < 0 || $utilities > 10000) {
-                $json['success'] = false;
-                $json['error'] = $this->language->get('error_utilities_range');
-                $this->response->addHeader('Content-Type: application/json');
-                $this->response->setOutput(json_encode($json));
-                return;
-            }
+        if (!$referer_valid) {
+            $json['error'] = 'Invalid request';
+            $this->response->addHeader('Content-Type: application/json');
+            $this->response->setOutput(json_encode($json));
+            return;
+        }
 
-            if ($master_percent < 0 || $master_percent > 50) {
-                $json['success'] = false;
-                $json['error'] = $this->language->get('error_master_percent_range');
-                $this->response->addHeader('Content-Type: application/json');
-                $this->response->setOutput(json_encode($json));
-                return;
-            }
+        $email = isset($this->request->post['email']) ? trim($this->request->post['email']) : '';
+        $product_id = isset($this->request->post['product_id']) ? (int)$this->request->post['product_id'] : 0;
 
-            if ($product_price <= 0) {
-                $json['success'] = false;
-                $json['error'] = $this->language->get('error_product_price');
-                $this->response->addHeader('Content-Type: application/json');
-                $this->response->setOutput(json_encode($json));
-                return;
-            }
+        if ($email === '') {
+            $json['error'] = $this->language->get('error_email_required');
+            $this->response->addHeader('Content-Type: application/json');
+            $this->response->setOutput(json_encode($json));
+            return;
+        }
 
-            // Расчет
-            $daily_income = $clients_per_day * $procedure_cost;
-            $monthly_income = $daily_income * $working_days;
-            $master_expenses = $monthly_income * ($master_percent / 100);
-            $net_profit = $monthly_income - $rent - $utilities - $master_expenses;
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $json['error'] = $this->language->get('error_email_invalid');
+            $this->response->addHeader('Content-Type: application/json');
+            $this->response->setOutput(json_encode($json));
+            return;
+        }
 
-            $monthly_profit_raw = max($net_profit, 0);
-            $annual_profit_raw = $monthly_profit_raw * 12;
-            $monthly_expenses_total_raw = $rent + $utilities + $master_expenses;
+        if (!$product_id) {
+            $json['error'] = $this->language->get('error_email_product');
+            $this->response->addHeader('Content-Type: application/json');
+            $this->response->setOutput(json_encode($json));
+            return;
+        }
 
-            if ($net_profit > 0) {
-                $payback_days = $product_price / $net_profit * 30; // Окупаемость в днях
-                $payback_months = round($product_price / $net_profit, 1);
-                $month_word = $this->getMonthWord(ceil($payback_months));
+        $calculation = $this->buildCalculationResult($this->request->post);
+        if (empty($calculation['success'])) {
+            $json['error'] = isset($calculation['error']) ? $calculation['error'] : $this->language->get('error_email_calculation');
+            $this->response->addHeader('Content-Type: application/json');
+            $this->response->setOutput(json_encode($json));
+            return;
+        }
 
-                $json['success'] = true;
-                $json['payback_text'] = number_format($payback_months, 1, '.', '') . ' ' . $month_word;
-                $json['payback_days_raw'] = (float)$payback_days; // Добавлено для формул тултипов
-                $json['annual_profit'] = number_format($annual_profit_raw, 0, '', ' ');
-                $json['net_profit'] = number_format($monthly_profit_raw, 0, '', ' ');
-                $json['monthly_income'] = number_format($monthly_income, 0, '', ' ');
-                $json['warning'] = '';
-                $json['monthly_profit'] = number_format($monthly_profit_raw, 0, '', ' ');
-                $json['monthly_expenses_total'] = number_format($monthly_expenses_total_raw, 0, '', ' ');
+        // Получаем информацию о товаре для темы письма
+        $this->load->model('catalog/product');
+        $product_info = $this->model_catalog_product->getProduct($product_id);
+        $product_name = $product_info ? $product_info['name'] : '';
 
-                // Расчет окупаемости для обычной цены (если есть акция)
-                if ($product_price_regular > 0 && $product_price_regular > $product_price) {
-                    $payback_days_regular = $product_price_regular / $net_profit * 30; // Окупаемость в днях
-                    $payback_months_regular = round($product_price_regular / $net_profit, 1);
-                    // Показываем только если срок окупаемости отличается
-                    if (abs($payback_months_regular - $payback_months) >= 0.1) {
-                        $month_word_regular = $this->getMonthWord(ceil($payback_months_regular));
-                        $json['payback_text_regular'] = number_format($payback_months_regular, 1, '.', '') . ' ' . $month_word_regular;
-                        $json['payback_days_regular_raw'] = (float)$payback_days_regular; // Добавлено для формул тултипов
-                        $json['price_regular_raw'] = (float)$product_price_regular; // Добавлено для формул тултипов
-                        $json['has_regular_price'] = true;
-                    } else {
-                        $json['has_regular_price'] = false;
-                    }
-                } else {
-                    $json['has_regular_price'] = false;
-                }
+        $current_currency = isset($this->session->data['currency']) ? $this->session->data['currency'] : $this->config->get('config_currency');
+
+        $formatCurrency = function($value) use ($current_currency) {
+            return $this->currency->format($value, $current_currency);
+        };
+
+        $subject = sprintf($this->language->get('text_email_subject'), $product_name ? $product_name : $this->language->get('text_email_subject_generic'));
+
+        $lines = array();
+        $lines[] = sprintf($this->language->get('text_email_intro'), $product_name ? $product_name : $this->language->get('text_email_subject_generic'));
+        $lines[] = '';
+        $lines[] = $this->language->get('text_payback') . ': ' . $calculation['payback_text'];
+        if (!empty($calculation['payback_text_regular']) && !empty($calculation['has_regular_price'])) {
+            $lines[] = $this->language->get('text_payback_regular') . ': ' . $calculation['payback_text_regular'];
+        }
+        $lines[] = $this->language->get('text_profit') . ': ' . $formatCurrency($calculation['annual_profit_raw']);
+        $lines[] = $this->language->get('text_monthly_profit') . ': ' . $formatCurrency($calculation['monthly_profit_raw']);
+        $lines[] = $this->language->get('text_monthly_expenses') . ': ' . $formatCurrency($calculation['monthly_expenses_total_raw']);
+        $lines[] = $this->language->get('text_monthly_rent') . ': ' . $formatCurrency($calculation['monthly_expense_rent_raw']);
+        $lines[] = $this->language->get('text_monthly_utilities') . ': ' . $formatCurrency($calculation['monthly_expense_utilities_raw']);
+        $lines[] = $this->language->get('text_monthly_master') . ': ' . $formatCurrency($calculation['monthly_expense_master_raw']);
+        $lines[] = '';
+        $lines[] = $this->language->get('text_email_inputs');
+        $lines[] = $this->language->get('entry_clients_per_day') . ': ' . $calculation['clients_per_day'];
+        $lines[] = $this->language->get('entry_procedure_cost') . ': ' . $formatCurrency($calculation['procedure_cost']);
+        $lines[] = $this->language->get('entry_working_days') . ': ' . $calculation['working_days'];
+        $lines[] = $this->language->get('entry_rent') . ': ' . $formatCurrency($calculation['rent']);
+        $lines[] = $this->language->get('entry_utilities') . ': ' . $formatCurrency($calculation['utilities']);
+        $lines[] = $this->language->get('entry_master_percent') . ': ' . $calculation['master_percent'] . '%';
+        $lines[] = '';
+        $lines[] = sprintf($this->language->get('text_email_footer'), $this->config->get('config_name'));
+
+        $message = implode("\n", $lines);
+
+        try {
+            if (method_exists('Mail', '__construct') && version_compare(VERSION, '3.0.0.0', '>=')) {
+                $mail = new Mail($this->config->get('config_mail_engine'));
             } else {
-                $json['success'] = true;
-                $json['payback_text'] = $this->language->get('text_not_applicable');
-                $json['annual_profit'] = number_format($annual_profit_raw, 0, '', ' ');
-                $json['net_profit'] = number_format($monthly_profit_raw, 0, '', ' ');
-                $json['monthly_income'] = number_format(max($monthly_income, 0), 0, '', ' ');
-                $json['warning'] = $this->language->get('text_warning_low_profit');
-                $json['monthly_profit'] = number_format($monthly_profit_raw, 0, '', ' ');
-                $json['monthly_expenses_total'] = number_format($monthly_expenses_total_raw, 0, '', ' ');
+                $mail = new Mail();
             }
 
-            $json['monthly_expense_rent'] = number_format($rent, 0, '', ' ');
-            $json['monthly_expense_rent_raw'] = (float)$rent;
-            $json['monthly_expense_utilities'] = number_format($utilities, 0, '', ' ');
-            $json['monthly_expense_utilities_raw'] = (float)$utilities;
-            $json['monthly_expense_master'] = number_format($master_expenses, 0, '', ' ');
-            $json['monthly_expense_master_raw'] = (float)$master_expenses;
-            $json['monthly_profit_raw'] = (float)$monthly_profit_raw;
-            $json['monthly_expenses_total_raw'] = (float)$monthly_expenses_total_raw;
+            if (version_compare(VERSION, '3.0.0.0', '>=')) {
+                $mail->parameter = $this->config->get('config_mail_parameter');
+                $mail->smtp_hostname = $this->config->get('config_mail_smtp_hostname');
+                $mail->smtp_username = $this->config->get('config_mail_smtp_username');
+                $mail->smtp_password = html_entity_decode($this->config->get('config_mail_smtp_password'), ENT_QUOTES, 'UTF-8');
+                $mail->smtp_port = $this->config->get('config_mail_smtp_port');
+                $mail->smtp_timeout = $this->config->get('config_mail_smtp_timeout');
+            } else {
+                $mail->protocol = $this->config->get('config_mail_protocol');
+                $mail->parameter = $this->config->get('config_mail_parameter');
+                $mail->smtp_hostname = $this->config->get('config_mail_smtp_hostname');
+                $mail->smtp_username = $this->config->get('config_mail_smtp_username');
+                $mail->smtp_password = $this->config->get('config_mail_smtp_password');
+                $mail->smtp_port = $this->config->get('config_mail_smtp_port');
+                $mail->smtp_timeout = $this->config->get('config_mail_smtp_timeout');
+            }
 
-            // Добавляем промежуточные данные для формул тултипов
-            $json['daily_income_raw'] = (float)$daily_income;
-            $json['monthly_income_raw'] = (float)$monthly_income;
-            $json['annual_profit_raw'] = (float)$annual_profit_raw;
-        } else {
-            $json['success'] = false;
-            $json['error'] = $this->language->get('error_missing_data');
+            $mail->setTo($email);
+            $mail->setFrom($this->config->get('config_email'));
+            $mail->setSender(html_entity_decode($this->config->get('config_name'), ENT_QUOTES, 'UTF-8'));
+            $mail->setSubject($subject);
+            $mail->setText($message);
+            $mail->send();
+
+            $json['success'] = true;
+            $json['message'] = sprintf($this->language->get('text_email_success'), $email);
+        } catch (\Exception $e) {
+            $json['error'] = $this->language->get('error_email_send');
         }
 
         $this->response->addHeader('Content-Type: application/json');
@@ -571,6 +577,149 @@ class ControllerExtensionModuleMLCalc extends Controller {
 
         $this->response->addHeader('Content-Type: application/json');
         $this->response->setOutput(json_encode($json));
+    }
+
+    private function buildCalculationResult($input) {
+        $json = array();
+
+        if (!isset($input['product_price']) ||
+            !isset($input['clients_per_day']) ||
+            !isset($input['procedure_cost']) ||
+            !isset($input['working_days']) ||
+            !isset($input['rent']) ||
+            !isset($input['master_percent'])) {
+            $json['success'] = false;
+            $json['error'] = $this->language->get('error_missing_data');
+            return $json;
+        }
+
+        $product_price = (float)$input['product_price'];
+        $product_price_regular = isset($input['product_price_regular']) ? (float)$input['product_price_regular'] : 0;
+        $clients_per_day = (int)$input['clients_per_day'];
+        $procedure_cost = (float)$input['procedure_cost'];
+        $working_days = (int)$input['working_days'];
+        $rent = (float)$input['rent'];
+        $utilities = isset($input['utilities']) ? (float)$input['utilities'] : 0.0;
+        $master_percent = (float)$input['master_percent'];
+
+        // Валидация входных данных
+        if ($clients_per_day < 1 || $clients_per_day > 20) {
+            $json['success'] = false;
+            $json['error'] = $this->language->get('error_clients_per_day_range');
+            return $json;
+        }
+
+        if ($procedure_cost < 100 || $procedure_cost > 6000) {
+            $json['success'] = false;
+            $json['error'] = $this->language->get('error_procedure_cost_range');
+            return $json;
+        }
+
+        if ($working_days < 1 || $working_days > 31) {
+            $json['success'] = false;
+            $json['error'] = $this->language->get('error_working_days_range');
+            return $json;
+        }
+
+        if ($rent < 0 || $rent > 50000) {
+            $json['success'] = false;
+            $json['error'] = $this->language->get('error_rent_range');
+            return $json;
+        }
+
+        if ($utilities < 0 || $utilities > 10000) {
+            $json['success'] = false;
+            $json['error'] = $this->language->get('error_utilities_range');
+            return $json;
+        }
+
+        if ($master_percent < 0 || $master_percent > 50) {
+            $json['success'] = false;
+            $json['error'] = $this->language->get('error_master_percent_range');
+            return $json;
+        }
+
+        if ($product_price <= 0) {
+            $json['success'] = false;
+            $json['error'] = $this->language->get('error_product_price');
+            return $json;
+        }
+
+        // Расчет
+        $daily_income = $clients_per_day * $procedure_cost;
+        $monthly_income = $daily_income * $working_days;
+        $master_expenses = $monthly_income * ($master_percent / 100);
+        $net_profit = $monthly_income - $rent - $utilities - $master_expenses;
+
+        $monthly_profit_raw = max($net_profit, 0);
+        $annual_profit_raw = $monthly_profit_raw * 12;
+        $monthly_expenses_total_raw = $rent + $utilities + $master_expenses;
+
+        $json['clients_per_day'] = $clients_per_day;
+        $json['procedure_cost'] = (float)$procedure_cost;
+        $json['working_days'] = $working_days;
+        $json['rent'] = (float)$rent;
+        $json['utilities'] = (float)$utilities;
+        $json['master_percent'] = (float)$master_percent;
+
+        if ($net_profit > 0) {
+            $payback_days = $product_price / $net_profit * 30; // Окупаемость в днях
+            $payback_months = round($product_price / $net_profit, 1);
+            $month_word = $this->getMonthWord(ceil($payback_months));
+
+            $json['success'] = true;
+            $json['payback_text'] = number_format($payback_months, 1, '.', '') . ' ' . $month_word;
+            $json['payback_days_raw'] = (float)$payback_days; // Добавлено для формул тултипов
+            $json['annual_profit'] = number_format($annual_profit_raw, 0, '', ' ');
+            $json['net_profit'] = number_format($monthly_profit_raw, 0, '', ' ');
+            $json['monthly_income'] = number_format($monthly_income, 0, '', ' ');
+            $json['warning'] = '';
+            $json['monthly_profit'] = number_format($monthly_profit_raw, 0, '', ' ');
+            $json['monthly_expenses_total'] = number_format($monthly_expenses_total_raw, 0, '', ' ');
+
+            // Расчет окупаемости для обычной цены (если есть акция)
+            if ($product_price_regular > 0 && $product_price_regular > $product_price) {
+                $payback_days_regular = $product_price_regular / $net_profit * 30; // Окупаемость в днях
+                $payback_months_regular = round($product_price_regular / $net_profit, 1);
+                // Показываем только если срок окупаемости отличается
+                if (abs($payback_months_regular - $payback_months) >= 0.1) {
+                    $month_word_regular = $this->getMonthWord(ceil($payback_months_regular));
+                    $json['payback_text_regular'] = number_format($payback_months_regular, 1, '.', '') . ' ' . $month_word_regular;
+                    $json['payback_days_regular_raw'] = (float)$payback_days_regular; // Добавлено для формул тултипов
+                    $json['price_regular_raw'] = (float)$product_price_regular; // Добавлено для формул тултипов
+                    $json['has_regular_price'] = true;
+                } else {
+                    $json['has_regular_price'] = false;
+                }
+            } else {
+                $json['has_regular_price'] = false;
+            }
+        } else {
+            $json['success'] = true;
+            $json['payback_text'] = $this->language->get('text_not_applicable');
+            $json['annual_profit'] = number_format($annual_profit_raw, 0, '', ' ');
+            $json['net_profit'] = number_format($monthly_profit_raw, 0, '', ' ');
+            $json['monthly_income'] = number_format(max($monthly_income, 0), 0, '', ' ');
+            $json['warning'] = $this->language->get('text_warning_low_profit');
+            $json['monthly_profit'] = number_format($monthly_profit_raw, 0, '', ' ');
+            $json['monthly_expenses_total'] = number_format($monthly_expenses_total_raw, 0, '', ' ');
+        }
+
+        $json['monthly_expense_rent'] = number_format($rent, 0, '', ' ');
+        $json['monthly_expense_rent_raw'] = (float)$rent;
+        $json['monthly_expense_utilities'] = number_format($utilities, 0, '', ' ');
+        $json['monthly_expense_utilities_raw'] = (float)$utilities;
+        $json['monthly_expense_master'] = number_format($master_expenses, 0, '', ' ');
+        $json['monthly_expense_master_raw'] = (float)$master_expenses;
+        $json['monthly_profit_raw'] = (float)$monthly_profit_raw;
+        $json['monthly_expenses_total_raw'] = (float)$monthly_expenses_total_raw;
+
+        // Добавляем промежуточные данные для формул тултипов
+        $json['daily_income_raw'] = (float)$daily_income;
+        $json['monthly_income_raw'] = (float)$monthly_income;
+        $json['annual_profit_raw'] = (float)$annual_profit_raw;
+
+        return $json;
     }
 
     private function ensureStatisticsSchema() {
