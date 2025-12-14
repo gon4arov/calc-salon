@@ -527,18 +527,6 @@ window.mlCalcEmailTexts = {
                     </div>
                 </div>
             </div>
-                <div class="ml-calc-email">
-                    <div class="ml-calc-email__label"><?php echo $text_email_lead; ?></div>
-                    <div class="ml-calc-email__controls">
-                        <input type="email"
-                               id="ml-calc-email-input"
-                           placeholder="<?php echo $entry_email; ?>"
-                           aria-label="<?php echo $entry_email; ?>">
-                    <button type="button" id="ml-calc-email-send"><?php echo $button_send_email; ?></button>
-                </div>
-                    <div class="ml-calc-email__status" id="ml-calc-email-status"></div>
-                </div>
-            </div>
         </div>
         <div class="ml-calc-email">
             <div class="ml-calc-email__label"><?php echo $text_email_lead; ?></div>
