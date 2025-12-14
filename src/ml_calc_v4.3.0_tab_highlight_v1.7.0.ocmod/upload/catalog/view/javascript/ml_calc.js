@@ -637,6 +637,8 @@ window.MLCalc.init = function(wrapper) {
         if (isNaN(payload.utilities)) {
             payload.utilities = 0;
         }
+        payload.currencyRate = currencyRate;
+        payload.currencyCode = currencyCode;
 
         var performSend = function() {
             $.ajax({
@@ -652,7 +654,9 @@ window.MLCalc.init = function(wrapper) {
                     working_days: payload.workingDays,
                     rent: payload.rent,
                     utilities: payload.utilities,
-                    master_percent: payload.masterPercent
+                    master_percent: payload.masterPercent,
+                    currency_rate: payload.currencyRate,
+                    currency_code: payload.currencyCode
                 },
                 dataType: 'json',
                 success: function(json) {

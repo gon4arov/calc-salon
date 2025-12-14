@@ -393,9 +393,14 @@ class ControllerExtensionModuleMLCalc extends Controller {
         $current_currency = isset($this->session->data['currency']) ? $this->session->data['currency'] : $this->config->get('config_currency');
 
         $formatCurrency = function($value) use ($current_currency) {
-            return $this->currency->format($value, $current_currency);
+            return $this->currency->format($value, $current_currency, 1, true);
         };
         $has_discount = !empty($calculation['product_price_regular']) && $calculation['product_price_regular'] > $calculation['product_price'];
+        $currency_rate = (!empty($calculation['currency_rate']) && $calculation['currency_rate'] > 0) ? (float)$calculation['currency_rate'] : null;
+        $currency_code = !empty($calculation['currency_code']) ? $calculation['currency_code'] : $current_currency;
+        $formatCurrencyCode = function($value, $code) {
+            return $this->currency->format($value, $code, 1, true);
+        };
 
         $subject = sprintf($this->language->get('text_email_subject'), $product_name ? $product_name : $this->language->get('text_email_subject_generic'));
 
@@ -403,11 +408,21 @@ class ControllerExtensionModuleMLCalc extends Controller {
         $lines[] = sprintf($this->language->get('text_email_intro'), $product_name ? $product_name : $this->language->get('text_email_subject_generic'));
         $lines[] = $this->language->get('text_email_product') . ': ' . ($product_name ? $product_name : $this->language->get('text_email_subject_generic'));
         $lines[] = $this->language->get('text_email_product_link') . ': ' . $this->url->link('product/product', 'product_id=' . $product_id);
+        $price_main = $formatCurrency($calculation['product_price']);
+        $price_usd = null;
+        if ($currency_rate) {
+            $price_usd = $formatCurrencyCode($calculation['product_price'] / $currency_rate, 'USD');
+        }
+        $price_regular_usd = null;
+        if ($currency_rate && !empty($calculation['product_price_regular'])) {
+            $price_regular_usd = $formatCurrencyCode($calculation['product_price_regular'] / $currency_rate, 'USD');
+        }
+
         if ($has_discount) {
-            $lines[] = $this->language->get('text_email_product_price_special') . ': ' . $formatCurrency($calculation['product_price']);
-            $lines[] = $this->language->get('text_email_product_price_regular') . ': ' . $formatCurrency($calculation['product_price_regular']);
+            $lines[] = $this->language->get('text_email_product_price_special') . ': ' . $price_main . ($price_usd ? (' (' . $price_usd . ')') : '');
+            $lines[] = $this->language->get('text_email_product_price_regular') . ': ' . $formatCurrency($calculation['product_price_regular']) . ($price_regular_usd ? (' (' . $price_regular_usd . ')') : '');
         } else {
-            $lines[] = $this->language->get('text_email_product_price') . ': ' . $formatCurrency($calculation['product_price']);
+            $lines[] = $this->language->get('text_email_product_price') . ': ' . $price_main . ($price_usd ? (' (' . $price_usd . ')') : '');
         }
         $lines[] = '';
         $lines[] = $this->language->get('text_payback') . ': ' . $calculation['payback_text'];
@@ -443,16 +458,16 @@ class ControllerExtensionModuleMLCalc extends Controller {
 
         $html .= '<div style="margin-bottom:12px; padding:12px 14px; border:1px solid #e9ecef; border-radius:8px; display:flex; gap:12px; align-items:center;">';
         if ($product_image) {
-            $html .= '<div style="flex:0 0 120px;"><img src="' . htmlspecialchars($product_image, ENT_QUOTES, 'UTF-8') . '" alt="' . $product_name_safe . '" style="max-width:120px; border-radius:8px; border:1px solid #e9ecef;"></div>';
+            $html .= '<div style="flex:0 0 120px; margin-right:10px;"><img src="' . htmlspecialchars($product_image, ENT_QUOTES, 'UTF-8') . '" alt="' . $product_name_safe . '" style="max-width:120px; border-radius:8px; border:1px solid #e9ecef;"></div>';
         }
         $html .= '<div style="flex:1;">';
         $html .= '<div style="font-size:16px; font-weight:600; margin-bottom:6px;">' . $product_name_safe . '</div>';
         $html .= '<div style="margin-bottom:6px;"><a href="' . $product_link_safe . '" style="color:#0d6efd; text-decoration:none;">' . $product_link_safe . '</a></div>';
         if ($has_discount) {
-            $html .= '<div style="font-size:14px; color:#111;">' . $this->language->get('text_email_product_price_special') . ': <strong>' . htmlspecialchars($formatCurrency($calculation['product_price']), ENT_QUOTES, 'UTF-8') . '</strong></div>';
-            $html .= '<div style="font-size:13px; color:#555;">' . $this->language->get('text_email_product_price_regular') . ': ' . htmlspecialchars($formatCurrency($calculation['product_price_regular']), ENT_QUOTES, 'UTF-8') . '</div>';
+            $html .= '<div style="font-size:14px; color:#111;">' . $this->language->get('text_email_product_price_special') . ': <strong>' . htmlspecialchars($price_main, ENT_QUOTES, 'UTF-8') . '</strong>' . ($price_usd ? ' <span style="color:#555;">(' . htmlspecialchars($price_usd, ENT_QUOTES, 'UTF-8') . ')</span>' : '') . '</div>';
+            $html .= '<div style="font-size:13px; color:#555;">' . $this->language->get('text_email_product_price_regular') . ': ' . htmlspecialchars($formatCurrency($calculation['product_price_regular']), ENT_QUOTES, 'UTF-8') . ($price_regular_usd ? ' <span>(' . htmlspecialchars($price_regular_usd, ENT_QUOTES, 'UTF-8') . ')</span>' : '') . '</div>';
         } else {
-            $html .= '<div style="font-size:14px; color:#111;">' . $this->language->get('text_email_product_price') . ': <strong>' . htmlspecialchars($formatCurrency($calculation['product_price']), ENT_QUOTES, 'UTF-8') . '</strong></div>';
+            $html .= '<div style="font-size:14px; color:#111;">' . $this->language->get('text_email_product_price') . ': <strong>' . htmlspecialchars($price_main, ENT_QUOTES, 'UTF-8') . '</strong>' . ($price_usd ? ' <span style="color:#555;">(' . htmlspecialchars($price_usd, ENT_QUOTES, 'UTF-8') . ')</span>' : '') . '</div>';
         }
         $html .= '</div>';
         $html .= '</div>';
@@ -768,6 +783,8 @@ class ControllerExtensionModuleMLCalc extends Controller {
         $json['master_percent'] = (float)$master_percent;
         $json['product_price'] = (float)$product_price;
         $json['product_price_regular'] = (float)$product_price_regular;
+        $json['currency_rate'] = isset($input['currency_rate']) ? (float)$input['currency_rate'] : null;
+        $json['currency_code'] = isset($input['currency_code']) ? $this->db->escape($input['currency_code']) : '';
 
         if ($net_profit > 0) {
             $payback_days = $product_price / $net_profit * 30; // Окупаемость в днях
