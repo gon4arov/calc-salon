@@ -12,7 +12,7 @@ $_['text_home']        = 'Головна';
 
 // Entry
 $_['entry_status']                      = 'Статус';
-$_['entry_show_regular_payback']        = 'Показувати окупність без акції';
+$_['entry_show_regular_payback']        = 'Показувати окупність за звичайною ціною (без акції)';
 $_['help_show_regular_payback']         = 'Якщо увімкнено, за наявності акційної ціни буде додатково показано термін окупності за звичайною ціною';
 $_['entry_show_calc_button']            = 'Показувати кнопку калькулятора';
 $_['help_show_calc_button']             = 'Відображає кнопку "Розрахувати окупність" під кнопкою "Додати в кошик", при кліці відкриває вкладку з калькулятором';
@@ -79,7 +79,7 @@ $_['help_mobile_breakdown_font_size']   = 'Розмір шрифту для пі
 // Tooltips
 $_['text_tooltip_settings']             = 'Налаштування підказок';
 $_['entry_tooltip_payback']             = 'Підказка для окупності';
-$_['entry_tooltip_payback_regular']     = 'Підказка для окупності без акції';
+$_['entry_tooltip_payback_regular']     = 'Підказка для окупності за звичайною ціною (без акції)';
 $_['entry_tooltip_annual_profit']       = 'Підказка для річного прибутку';
 $_['entry_tooltip_monthly_profit']      = 'Підказка для щомісячного прибутку';
 $_['entry_tooltip_monthly_expenses']    = 'Підказка для щомісячних витрат';
@@ -100,7 +100,7 @@ $_['column_changed_parameter']          = 'Змінено параметр';
 $_['column_value_old']                  = 'Було';
 $_['column_value_new']                  = 'Стало';
 $_['column_payback_special']            = 'Окупність (акція)';
-$_['column_payback_regular']            = 'Окупність (звичайна)';
+$_['column_payback_regular']            = 'Окупність при звичайній ціні (без акції)';
 $_['column_product_price']              = 'Ціна';
 $_['column_clients_per_day']            = 'Клієнтів/день';
 $_['column_procedure_cost']             = 'Вартість процедури';

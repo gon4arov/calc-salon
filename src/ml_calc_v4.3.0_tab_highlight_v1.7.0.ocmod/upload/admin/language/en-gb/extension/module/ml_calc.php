@@ -12,7 +12,7 @@ $_['text_home']        = 'Home';
 
 // Entry
 $_['entry_status']                      = 'Status';
-$_['entry_show_regular_payback']        = 'Show payback without discount';
+$_['entry_show_regular_payback']        = 'Show payback at regular price (no discount)';
 $_['help_show_regular_payback']         = 'If enabled, when there is a special price, the payback period for the regular price will also be displayed';
 $_['entry_show_calc_button']            = 'Show calculator button';
 $_['help_show_calc_button']             = 'Displays "Calculate Payback" button below "Add to Cart" button, clicking it opens the calculator tab';
@@ -82,7 +82,7 @@ $_['help_mobile_breakdown_font_size']   = 'Breakdown block font size on mobile d
 // Tooltips
 $_['text_tooltip_settings']             = 'Tooltip Settings';
 $_['entry_tooltip_payback']             = 'Payback Tooltip';
-$_['entry_tooltip_payback_regular']     = 'Payback without discount Tooltip';
+$_['entry_tooltip_payback_regular']     = 'Payback at regular price (no promo) Tooltip';
 $_['entry_tooltip_annual_profit']       = 'Annual Profit Tooltip';
 $_['entry_tooltip_monthly_profit']      = 'Monthly Profit Tooltip';
 $_['entry_tooltip_monthly_expenses']    = 'Monthly Expenses Tooltip';
@@ -103,7 +103,7 @@ $_['column_changed_parameter']          = 'Changed parameter';
 $_['column_value_old']                  = 'Previous value';
 $_['column_value_new']                  = 'New value';
 $_['column_payback_special']            = 'Payback (promo)';
-$_['column_payback_regular']            = 'Payback (regular)';
+$_['column_payback_regular']            = 'Payback at regular price (no promo)';
 $_['column_product_price']              = 'Price';
 $_['column_clients_per_day']            = 'Clients/day';
 $_['column_procedure_cost']             = 'Procedure cost';

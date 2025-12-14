@@ -12,7 +12,7 @@ $_['text_home']        = 'Главная';
 
 // Entry
 $_['entry_status']                      = 'Статус';
-$_['entry_show_regular_payback']        = 'Показывать окупаемость без акции';
+$_['entry_show_regular_payback']        = 'Показывать окупаемость при обычной цене (без акции)';
 $_['help_show_regular_payback']         = 'Если включено, при наличии акционной цены будет дополнительно показан срок окупаемости по обычной цене';
 $_['entry_show_calc_button']            = 'Показывать кнопку калькулятора';
 $_['help_show_calc_button']             = 'Отображает кнопку "Рассчитать окупаемость" под кнопкой "Добавить в корзину", при клике открывает вкладку с калькулятором';
@@ -82,7 +82,7 @@ $_['help_mobile_breakdown_font_size']   = 'Размер шрифта для ит
 // Tooltips
 $_['text_tooltip_settings']             = 'Настройки подсказок';
 $_['entry_tooltip_payback']             = 'Подсказка для окупаемости';
-$_['entry_tooltip_payback_regular']     = 'Подсказка для окупаемости без акции';
+$_['entry_tooltip_payback_regular']     = 'Подсказка для окупаемости при обычной цене (без акции)';
 $_['entry_tooltip_annual_profit']       = 'Подсказка для годовой прибыли';
 $_['entry_tooltip_monthly_profit']      = 'Подсказка для ежемесячной прибыли';
 $_['entry_tooltip_monthly_expenses']    = 'Подсказка для ежемесячных расходов';
@@ -103,7 +103,7 @@ $_['column_changed_parameter']          = 'Изменён параметр';
 $_['column_value_old']                  = 'Было';
 $_['column_value_new']                  = 'Стало';
 $_['column_payback_special']            = 'Окупаемость (акция)';
-$_['column_payback_regular']            = 'Окупаемость (обычная)';
+$_['column_payback_regular']            = 'Окупаемость при обычной цене (без акции)';
 $_['column_product_price']              = 'Цена';
 $_['column_clients_per_day']            = 'Клиентов/день';
 $_['column_procedure_cost']             = 'Стоимость процедуры';
