@@ -458,7 +458,7 @@ class ControllerExtensionModuleMLCalc extends Controller {
 
         $html .= '<div style="margin-bottom:12px; padding:12px 14px; border:1px solid #e9ecef; border-radius:8px; display:flex; gap:12px; align-items:center;">';
         if ($product_image) {
-            $html .= '<div style="flex:0 0 120px; margin-right:10px;"><img src="' . htmlspecialchars($product_image, ENT_QUOTES, 'UTF-8') . '" alt="' . $product_name_safe . '" style="max-width:120px; border-radius:8px; border:1px solid #e9ecef;"></div>';
+            $html .= '<div style="flex:0 0 120px; margin-right:14px;"><img src="' . htmlspecialchars($product_image, ENT_QUOTES, 'UTF-8') . '" alt="' . $product_name_safe . '" style="max-width:120px; border-radius:8px; border:1px solid #e9ecef;"></div>';
         }
         $html .= '<div style="flex:1;">';
         $html .= '<div style="font-size:16px; font-weight:600; margin-bottom:6px;">' . $product_name_safe . '</div>';
