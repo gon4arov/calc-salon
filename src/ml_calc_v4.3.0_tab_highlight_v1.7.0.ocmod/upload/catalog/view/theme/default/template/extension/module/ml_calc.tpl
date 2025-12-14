@@ -254,6 +254,9 @@
     display: none;
     font-size: 13px;
     line-height: 1.4;
+    width: 100%;
+    text-align: center;
+    margin-top: 6px;
 }
 .ml-calc-status--success {
     color: #28a745;
