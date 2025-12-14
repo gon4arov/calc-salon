@@ -257,15 +257,18 @@
     width: 100%;
     text-align: center;
     margin-top: 6px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    color: #111;
 }
 .ml-calc-status--success {
-    color: #28a745;
+    background: #d7f5e0;
 }
 .ml-calc-status--error {
-    color: #dc3545;
+    background: #f8d7da;
 }
 .ml-calc-status--info {
-    color: #6c757d;
+    background: #e9ecef;
 }
 .ml-calc-product-options {
     margin-top: 15px;
