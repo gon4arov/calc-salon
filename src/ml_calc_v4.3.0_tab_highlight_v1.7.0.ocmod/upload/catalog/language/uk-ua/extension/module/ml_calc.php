@@ -40,7 +40,7 @@ $_['text_email_product_link'] = 'Посилання на товар';
 $_['text_email_product_price'] = 'Поточна ціна';
 $_['text_email_product_price_regular'] = 'Звичайна ціна';
 $_['text_email_product_price_special'] = 'Акційна ціна';
-$_['button_send_email'] = 'Надіслати розрахунок';
+$_['button_send_email'] = 'Надіслати на email';
 
 // Tab
 $_['tab_ml_calc']      = 'Калькулятор окупності';

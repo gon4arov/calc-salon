@@ -529,7 +529,6 @@ window.mlCalcEmailTexts = {
             </div>
         </div>
         <div class="ml-calc-email">
-            <div class="ml-calc-email__label"><?php echo $text_email_lead; ?></div>
             <div class="ml-calc-email__controls">
                 <input type="email"
                        id="ml-calc-email-input"
@@ -539,6 +538,7 @@ window.mlCalcEmailTexts = {
             </div>
             <div class="ml-calc-email__status" id="ml-calc-email-status"></div>
         </div>
+    </div>
 
     <div class="ml-calc-container">
         <div class="ml-calc-row">

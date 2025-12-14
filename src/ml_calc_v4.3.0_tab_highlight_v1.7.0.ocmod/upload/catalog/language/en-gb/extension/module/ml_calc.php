@@ -40,7 +40,7 @@ $_['text_email_product_link'] = 'Product link';
 $_['text_email_product_price'] = 'Current price';
 $_['text_email_product_price_regular'] = 'Regular price';
 $_['text_email_product_price_special'] = 'Discount price';
-$_['button_send_email'] = 'Send calculation';
+$_['button_send_email'] = 'Send to email';
 
 // Tab
 $_['tab_ml_calc']      = 'Payback Calculator';

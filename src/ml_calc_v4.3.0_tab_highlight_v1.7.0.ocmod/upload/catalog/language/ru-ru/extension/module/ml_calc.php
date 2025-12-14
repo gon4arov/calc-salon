@@ -40,7 +40,7 @@ $_['text_email_product_link'] = 'Ссылка на товар';
 $_['text_email_product_price'] = 'Текущая цена';
 $_['text_email_product_price_regular'] = 'Обычная цена';
 $_['text_email_product_price_special'] = 'Акционная цена';
-$_['button_send_email'] = 'Отправить расчёт';
+$_['button_send_email'] = 'Отправить на email';
 
 // Tab
 $_['tab_ml_calc']      = 'Калькулятор окупаемости';
