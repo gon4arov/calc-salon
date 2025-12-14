@@ -419,6 +419,64 @@ class ControllerExtensionModuleMLCalc extends Controller {
 
         $message = implode("\n", $lines);
 
+        $product_name_safe = htmlspecialchars($product_name ? $product_name : $this->language->get('text_email_subject_generic'), ENT_QUOTES, 'UTF-8');
+        $company_name_safe = htmlspecialchars($this->config->get('config_name'), ENT_QUOTES, 'UTF-8');
+
+        $html = '<div style="font-family: Arial, sans-serif; color: #222; max-width: 640px;">';
+        $html .= '<h2 style="margin: 0 0 12px; font-size: 20px;">' . sprintf($this->language->get('text_email_intro'), $product_name_safe) . '</h2>';
+
+        $html .= '<div style="background:#f8f9fa; border:1px solid #e9ecef; border-radius:8px; padding:16px; margin-bottom:16px;">';
+        $html .= '<h3 style="margin:0 0 10px; font-size:16px; color:#111;">' . $this->language->get('text_payback') . '</h3>';
+        $html .= '<p style="margin:4px 0; font-size:14px;"><strong>' . $this->language->get('text_payback') . ':</strong> ' . htmlspecialchars($calculation['payback_text'], ENT_QUOTES, 'UTF-8') . '</p>';
+        if (!empty($calculation['payback_text_regular']) && !empty($calculation['has_regular_price'])) {
+            $html .= '<p style="margin:4px 0; font-size:14px;"><strong>' . $this->language->get('text_payback_regular') . ':</strong> ' . htmlspecialchars($calculation['payback_text_regular'], ENT_QUOTES, 'UTF-8') . '</p>';
+        }
+        $html .= '<p style="margin:4px 0; font-size:14px;"><strong>' . $this->language->get('text_profit') . ':</strong> ' . htmlspecialchars($formatCurrency($calculation['annual_profit_raw']), ENT_QUOTES, 'UTF-8') . '</p>';
+        $html .= '<p style="margin:4px 0; font-size:14px;"><strong>' . $this->language->get('text_monthly_profit') . ':</strong> ' . htmlspecialchars($formatCurrency($calculation['monthly_profit_raw']), ENT_QUOTES, 'UTF-8') . '</p>';
+        $html .= '</div>';
+
+        $html .= '<div style="border:1px solid #e9ecef; border-radius:8px; overflow:hidden; margin-bottom:16px;">';
+        $html .= '<div style="background:#f1f3f5; padding:10px 14px; font-size:14px; font-weight:bold;">' . $this->language->get('text_monthly_breakdown') . '</div>';
+        $html .= '<table style="width:100%; border-collapse:collapse; font-size:13px;">';
+        $rows = array(
+            array($this->language->get('text_monthly_profit'), $formatCurrency($calculation['monthly_profit_raw'])),
+            array($this->language->get('text_monthly_expenses'), $formatCurrency($calculation['monthly_expenses_total_raw'])),
+            array($this->language->get('text_monthly_rent'), $formatCurrency($calculation['monthly_expense_rent_raw'])),
+            array($this->language->get('text_monthly_utilities'), $formatCurrency($calculation['monthly_expense_utilities_raw'])),
+            array($this->language->get('text_monthly_master'), $formatCurrency($calculation['monthly_expense_master_raw']))
+        );
+        foreach ($rows as $row) {
+            $html .= '<tr>';
+            $html .= '<td style="padding:8px 12px; border-top:1px solid #e9ecef;">' . htmlspecialchars($row[0], ENT_QUOTES, 'UTF-8') . '</td>';
+            $html .= '<td style="padding:8px 12px; border-top:1px solid #e9ecef; text-align:right; font-weight:600;">' . htmlspecialchars($row[1], ENT_QUOTES, 'UTF-8') . '</td>';
+            $html .= '</tr>';
+        }
+        $html .= '</table>';
+        $html .= '</div>';
+
+        $html .= '<div style="border:1px solid #e9ecef; border-radius:8px; overflow:hidden;">';
+        $html .= '<div style="background:#f1f3f5; padding:10px 14px; font-size:14px; font-weight:bold;">' . $this->language->get('text_email_inputs') . '</div>';
+        $html .= '<table style="width:100%; border-collapse:collapse; font-size:13px;">';
+        $inputRows = array(
+            array($this->language->get('entry_clients_per_day'), $calculation['clients_per_day']),
+            array($this->language->get('entry_procedure_cost'), $formatCurrency($calculation['procedure_cost'])),
+            array($this->language->get('entry_working_days'), $calculation['working_days']),
+            array($this->language->get('entry_rent'), $formatCurrency($calculation['rent'])),
+            array($this->language->get('entry_utilities'), $formatCurrency($calculation['utilities'])),
+            array($this->language->get('entry_master_percent'), $calculation['master_percent'] . '%')
+        );
+        foreach ($inputRows as $row) {
+            $html .= '<tr>';
+            $html .= '<td style="padding:8px 12px; border-top:1px solid #e9ecef;">' . htmlspecialchars($row[0], ENT_QUOTES, 'UTF-8') . '</td>';
+            $html .= '<td style="padding:8px 12px; border-top:1px solid #e9ecef; text-align:right;">' . htmlspecialchars((string)$row[1], ENT_QUOTES, 'UTF-8') . '</td>';
+            $html .= '</tr>';
+        }
+        $html .= '</table>';
+        $html .= '</div>';
+
+        $html .= '<p style="margin:12px 0 0; font-size:12px; color:#6c757d;">' . sprintf($this->language->get('text_email_footer'), $company_name_safe) . '</p>';
+        $html .= '</div>';
+
         try {
             if (method_exists('Mail', '__construct') && version_compare(VERSION, '3.0.0.0', '>=')) {
                 $mail = new Mail($this->config->get('config_mail_engine'));
@@ -448,6 +506,9 @@ class ControllerExtensionModuleMLCalc extends Controller {
             $mail->setSender(html_entity_decode($this->config->get('config_name'), ENT_QUOTES, 'UTF-8'));
             $mail->setSubject($subject);
             $mail->setText($message);
+            if (method_exists($mail, 'setHtml')) {
+                $mail->setHtml($html);
+            }
             $mail->send();
 
             $json['success'] = true;
