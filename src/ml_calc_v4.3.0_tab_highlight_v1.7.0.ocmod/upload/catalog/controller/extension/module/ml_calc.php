@@ -384,12 +384,18 @@ class ControllerExtensionModuleMLCalc extends Controller {
         $this->load->model('catalog/product');
         $product_info = $this->model_catalog_product->getProduct($product_id);
         $product_name = $product_info ? $product_info['name'] : '';
+        $product_image = '';
+        $this->load->model('tool/image');
+        if (!empty($product_info['image'])) {
+            $product_image = $this->model_tool_image->resize($product_info['image'], 320, 320);
+        }
 
         $current_currency = isset($this->session->data['currency']) ? $this->session->data['currency'] : $this->config->get('config_currency');
 
         $formatCurrency = function($value) use ($current_currency) {
             return $this->currency->format($value, $current_currency);
         };
+        $has_discount = !empty($calculation['product_price_regular']) && $calculation['product_price_regular'] > $calculation['product_price'];
 
         $subject = sprintf($this->language->get('text_email_subject'), $product_name ? $product_name : $this->language->get('text_email_subject_generic'));
 
@@ -397,9 +403,11 @@ class ControllerExtensionModuleMLCalc extends Controller {
         $lines[] = sprintf($this->language->get('text_email_intro'), $product_name ? $product_name : $this->language->get('text_email_subject_generic'));
         $lines[] = $this->language->get('text_email_product') . ': ' . ($product_name ? $product_name : $this->language->get('text_email_subject_generic'));
         $lines[] = $this->language->get('text_email_product_link') . ': ' . $this->url->link('product/product', 'product_id=' . $product_id);
-        $lines[] = $this->language->get('text_email_product_price') . ': ' . $formatCurrency($calculation['product_price']);
-        if (!empty($calculation['product_price_regular'])) {
+        if ($has_discount) {
+            $lines[] = $this->language->get('text_email_product_price_special') . ': ' . $formatCurrency($calculation['product_price']);
             $lines[] = $this->language->get('text_email_product_price_regular') . ': ' . $formatCurrency($calculation['product_price_regular']);
+        } else {
+            $lines[] = $this->language->get('text_email_product_price') . ': ' . $formatCurrency($calculation['product_price']);
         }
         $lines[] = '';
         $lines[] = $this->language->get('text_payback') . ': ' . $calculation['payback_text'];
@@ -433,39 +441,58 @@ class ControllerExtensionModuleMLCalc extends Controller {
         $html = '<div style="font-family: Arial, sans-serif; color: #222; max-width: 640px;">';
         $html .= '<h2 style="margin: 0 0 12px; font-size: 20px;">' . sprintf($this->language->get('text_email_intro'), $product_name_safe) . '</h2>';
 
-        $html .= '<div style="margin-bottom:12px; padding:12px 14px; border:1px solid #e9ecef; border-radius:8px;">';
+        $html .= '<div style="margin-bottom:12px; padding:12px 14px; border:1px solid #e9ecef; border-radius:8px; display:flex; gap:12px; align-items:center;">';
+        if ($product_image) {
+            $html .= '<div style="flex:0 0 120px;"><img src="' . htmlspecialchars($product_image, ENT_QUOTES, 'UTF-8') . '" alt="' . $product_name_safe . '" style="max-width:120px; border-radius:8px; border:1px solid #e9ecef;"></div>';
+        }
+        $html .= '<div style="flex:1;">';
         $html .= '<div style="font-size:16px; font-weight:600; margin-bottom:6px;">' . $product_name_safe . '</div>';
         $html .= '<div style="margin-bottom:6px;"><a href="' . $product_link_safe . '" style="color:#0d6efd; text-decoration:none;">' . $product_link_safe . '</a></div>';
-        $html .= '<div style="font-size:14px; color:#111;">' . $this->language->get('text_email_product_price') . ': <strong>' . htmlspecialchars($formatCurrency($calculation['product_price']), ENT_QUOTES, 'UTF-8') . '</strong></div>';
-        if (!empty($calculation['product_price_regular'])) {
+        if ($has_discount) {
+            $html .= '<div style="font-size:14px; color:#111;">' . $this->language->get('text_email_product_price_special') . ': <strong>' . htmlspecialchars($formatCurrency($calculation['product_price']), ENT_QUOTES, 'UTF-8') . '</strong></div>';
             $html .= '<div style="font-size:13px; color:#555;">' . $this->language->get('text_email_product_price_regular') . ': ' . htmlspecialchars($formatCurrency($calculation['product_price_regular']), ENT_QUOTES, 'UTF-8') . '</div>';
+        } else {
+            $html .= '<div style="font-size:14px; color:#111;">' . $this->language->get('text_email_product_price') . ': <strong>' . htmlspecialchars($formatCurrency($calculation['product_price']), ENT_QUOTES, 'UTF-8') . '</strong></div>';
         }
         $html .= '</div>';
+        $html .= '</div>';
 
-        $html .= '<div style="background:#f8f9fa; border:1px solid #e9ecef; border-radius:8px; padding:16px; margin-bottom:16px;">';
-        $html .= '<h3 style="margin:0 0 10px; font-size:16px; color:#111;">' . $this->language->get('text_payback') . '</h3>';
-        $html .= '<p style="margin:4px 0; font-size:14px;"><strong>' . $this->language->get('text_payback') . ':</strong> ' . htmlspecialchars($calculation['payback_text'], ENT_QUOTES, 'UTF-8') . '</p>';
-        if (!empty($calculation['payback_text_regular']) && !empty($calculation['has_regular_price'])) {
-            $html .= '<p style="margin:4px 0; font-size:14px;"><strong>' . $this->language->get('text_payback_regular') . ':</strong> ' . htmlspecialchars($calculation['payback_text_regular'], ENT_QUOTES, 'UTF-8') . '</p>';
+        $html .= '<div style="background:#f8f9fa; border:1px solid #e9ecef; border-radius:8px; padding:0; margin-bottom:16px; overflow:hidden;">';
+        $html .= '<div style="padding:12px 16px; font-size:16px; color:#111; font-weight:600;">' . $this->language->get('text_payback') . '</div>';
+        $html .= '<table style="width:100%; border-collapse:collapse; font-size:14px;">';
+        $paybackRows = array(
+            array($this->language->get('text_payback'), $calculation['payback_text']),
+            (!empty($calculation['payback_text_regular']) && !empty($calculation['has_regular_price'])) ? array($this->language->get('text_payback_regular'), $calculation['payback_text_regular']) : null,
+            array($this->language->get('text_profit'), $formatCurrency($calculation['annual_profit_raw'])),
+            array($this->language->get('text_monthly_profit'), $formatCurrency($calculation['monthly_profit_raw']))
+        );
+        foreach ($paybackRows as $row) {
+            if (!$row) {
+                continue;
+            }
+            $html .= '<tr>';
+            $html .= '<td style="padding:10px 14px; border-top:1px solid #e9ecef;">' . htmlspecialchars($row[0], ENT_QUOTES, 'UTF-8') . '</td>';
+            $html .= '<td style="padding:10px 14px; border-top:1px solid #e9ecef; text-align:right; font-weight:600;">' . htmlspecialchars((string)$row[1], ENT_QUOTES, 'UTF-8') . '</td>';
+            $html .= '</tr>';
         }
-        $html .= '<p style="margin:4px 0; font-size:14px;"><strong>' . $this->language->get('text_profit') . ':</strong> ' . htmlspecialchars($formatCurrency($calculation['annual_profit_raw']), ENT_QUOTES, 'UTF-8') . '</p>';
-        $html .= '<p style="margin:4px 0; font-size:14px;"><strong>' . $this->language->get('text_monthly_profit') . ':</strong> ' . htmlspecialchars($formatCurrency($calculation['monthly_profit_raw']), ENT_QUOTES, 'UTF-8') . '</p>';
+        $html .= '</table>';
         $html .= '</div>';
 
         $html .= '<div style="border:1px solid #e9ecef; border-radius:8px; overflow:hidden; margin-bottom:16px;">';
         $html .= '<div style="background:#f1f3f5; padding:10px 14px; font-size:14px; font-weight:bold;">' . $this->language->get('text_monthly_breakdown') . '</div>';
         $html .= '<table style="width:100%; border-collapse:collapse; font-size:13px;">';
         $rows = array(
-            array($this->language->get('text_monthly_profit'), $formatCurrency($calculation['monthly_profit_raw'])),
-            array($this->language->get('text_monthly_expenses'), $formatCurrency($calculation['monthly_expenses_total_raw'])),
+            array($this->language->get('text_monthly_profit'), $formatCurrency($calculation['monthly_profit_raw']), '#28a745'),
+            array($this->language->get('text_monthly_expenses'), $formatCurrency($calculation['monthly_expenses_total_raw']), '#dc3545'),
             array($this->language->get('text_monthly_rent'), $formatCurrency($calculation['monthly_expense_rent_raw'])),
             array($this->language->get('text_monthly_utilities'), $formatCurrency($calculation['monthly_expense_utilities_raw'])),
             array($this->language->get('text_monthly_master'), $formatCurrency($calculation['monthly_expense_master_raw']))
         );
         foreach ($rows as $row) {
             $html .= '<tr>';
+            $color = isset($row[2]) ? $row[2] : '#222';
             $html .= '<td style="padding:8px 12px; border-top:1px solid #e9ecef;">' . htmlspecialchars($row[0], ENT_QUOTES, 'UTF-8') . '</td>';
-            $html .= '<td style="padding:8px 12px; border-top:1px solid #e9ecef; text-align:right; font-weight:600;">' . htmlspecialchars($row[1], ENT_QUOTES, 'UTF-8') . '</td>';
+            $html .= '<td style="padding:8px 12px; border-top:1px solid #e9ecef; text-align:right; font-weight:600; color:' . htmlspecialchars($color, ENT_QUOTES, 'UTF-8') . ';">' . htmlspecialchars($row[1], ENT_QUOTES, 'UTF-8') . '</td>';
             $html .= '</tr>';
         }
         $html .= '</table>';
