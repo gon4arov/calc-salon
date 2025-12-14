@@ -230,7 +230,7 @@
     justify-content: center;
 }
 .ml-calc-email input[type="email"] {
-    min-width: 240px;
+    min-width: 245px;
     padding: 8px 10px;
     border: 1px solid #ced4da;
     border-radius: 6px;
