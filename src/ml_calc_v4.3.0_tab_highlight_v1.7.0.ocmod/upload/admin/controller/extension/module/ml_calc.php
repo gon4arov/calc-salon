@@ -2,7 +2,7 @@
 class ControllerExtensionModuleMlCalc extends Controller {
     private $error = array();
 
-    const VERSION = '1.8.8';
+    const VERSION = '1.8.9';
 
     public function index() {
         $this->load->language('extension/module/ml_calc');
@@ -494,6 +494,7 @@ class ControllerExtensionModuleMlCalc extends Controller {
                 `payback_months_regular` decimal(10,2) DEFAULT NULL,
                 `value_old` decimal(15,4) DEFAULT NULL,
                 `value_new` decimal(15,4) DEFAULT NULL,
+                `email` varchar(255) DEFAULT NULL,
                 `date_added` datetime NOT NULL,
                 PRIMARY KEY (`id`),
                 KEY `product_id` (`product_id`),
@@ -515,7 +516,8 @@ class ControllerExtensionModuleMlCalc extends Controller {
             'payback_months' => 'ADD COLUMN `payback_months` decimal(10,2) DEFAULT NULL AFTER `master_percent`',
             'payback_months_regular' => 'ADD COLUMN `payback_months_regular` decimal(10,2) DEFAULT NULL AFTER `payback_months`',
             'value_old' => 'ADD COLUMN `value_old` decimal(15,4) DEFAULT NULL AFTER `payback_months_regular`',
-            'value_new' => 'ADD COLUMN `value_new` decimal(15,4) DEFAULT NULL AFTER `value_old`'
+            'value_new' => 'ADD COLUMN `value_new` decimal(15,4) DEFAULT NULL AFTER `value_old`',
+            'email' => 'ADD COLUMN `email` varchar(255) DEFAULT NULL AFTER `value_new`'
         );
 
         foreach ($columns_to_add as $column => $alter_sql) {
@@ -558,6 +560,7 @@ class ControllerExtensionModuleMlCalc extends Controller {
         $data['column_utilities'] = $this->language->get('column_utilities');
         $data['column_master_percent'] = $this->language->get('column_master_percent');
         $data['column_ip'] = $this->language->get('column_ip');
+        $data['column_email'] = $this->language->get('column_email');
         $data['column_date'] = $this->language->get('column_date');
         $data['button_clear'] = $this->language->get('button_clear');
         $data['button_back'] = $this->language->get('button_back');
@@ -643,7 +646,8 @@ class ControllerExtensionModuleMlCalc extends Controller {
             'working_days' => $this->language->get('column_working_days'),
             'rent' => $this->language->get('column_rent'),
             'utilities' => $this->language->get('column_utilities'),
-            'master_percent' => $this->language->get('column_master_percent')
+            'master_percent' => $this->language->get('column_master_percent'),
+            'email_send' => $this->language->get('column_email_send')
         );
 
         $formatValue = function($param, $value) {
@@ -653,6 +657,10 @@ class ControllerExtensionModuleMlCalc extends Controller {
 
             if ($param === 'master_percent') {
                 return rtrim(rtrim(number_format((float)$value, 2, '.', ' '), '0'), '.') . '%';
+            }
+
+            if ($param === 'email_send') {
+                return htmlspecialchars((string)$value, ENT_QUOTES, 'UTF-8');
             }
 
             if (in_array($param, array('clients_per_day', 'working_days'), true)) {
@@ -712,6 +720,7 @@ class ControllerExtensionModuleMlCalc extends Controller {
                 'value_new'          => $formatValue($changed_param, $row_value_new),
                 'group_class'        => $group_class,
                 'ip_address'         => $row['ip_address'],
+                'email'              => isset($row['email']) ? htmlspecialchars($row['email'], ENT_QUOTES, 'UTF-8') : '',
                 'date_added'         => date('d.m.Y H:i', strtotime($row['date_added']))
             );
         }
@@ -981,6 +990,7 @@ class ControllerExtensionModuleMlCalc extends Controller {
                 `payback_months_regular` decimal(10,2) DEFAULT NULL,
                 `value_old` decimal(15,4) DEFAULT NULL,
                 `value_new` decimal(15,4) DEFAULT NULL,
+                `email` varchar(255) DEFAULT NULL,
                 `date_added` datetime NOT NULL,
                 PRIMARY KEY (`id`),
                 KEY `product_id` (`product_id`),
@@ -1001,7 +1011,8 @@ class ControllerExtensionModuleMlCalc extends Controller {
             'payback_months' => 'ADD COLUMN `payback_months` decimal(10,2) DEFAULT NULL AFTER `master_percent`',
             'payback_months_regular' => 'ADD COLUMN `payback_months_regular` decimal(10,2) DEFAULT NULL AFTER `payback_months`',
             'value_old' => 'ADD COLUMN `value_old` decimal(15,4) DEFAULT NULL AFTER `master_percent`',
-            'value_new' => 'ADD COLUMN `value_new` decimal(15,4) DEFAULT NULL AFTER `value_old`'
+            'value_new' => 'ADD COLUMN `value_new` decimal(15,4) DEFAULT NULL AFTER `value_old`',
+            'email' => 'ADD COLUMN `email` varchar(255) DEFAULT NULL AFTER `value_new`'
         );
 
         foreach ($columnsToAdd as $column => $alterSql) {

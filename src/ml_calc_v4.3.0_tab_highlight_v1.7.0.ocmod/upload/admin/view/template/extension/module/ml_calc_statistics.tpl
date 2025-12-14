@@ -54,6 +54,7 @@
                 <td class="text-right"><?php echo $column_utilities; ?></td>
                 <td class="text-right"><?php echo $column_master_percent; ?></td>
                 <td class="text-left"><?php echo $column_ip; ?></td>
+                <td class="text-left"><?php echo $column_email; ?></td>
                 <td class="text-left"><?php echo $column_date; ?></td>
               </tr>
             </thead>
@@ -75,6 +76,7 @@
                 <td class="text-right<?php echo ($stat['changed_parameter'] === 'utilities') ? ' stat-highlighted' : ''; ?>"><?php echo $stat['utilities']; ?></td>
                 <td class="text-right<?php echo ($stat['changed_parameter'] === 'master_percent') ? ' stat-highlighted' : ''; ?>"><?php echo $stat['master_percent']; ?></td>
                 <td class="text-left"><?php echo htmlspecialchars($stat['ip_address'], ENT_QUOTES, 'UTF-8'); ?></td>
+                <td class="text-left"><?php echo $stat['email'] !== '' ? htmlspecialchars($stat['email'], ENT_QUOTES, 'UTF-8') : '-'; ?></td>
                 <td class="text-left"><?php echo $stat['date_added']; ?></td>
               </tr>
               <?php } ?>

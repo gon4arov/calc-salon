@@ -574,12 +574,60 @@ class ControllerExtensionModuleMLCalc extends Controller {
 
             $json['success'] = true;
             $json['message'] = sprintf($this->language->get('text_email_success'), $email);
+
+            // Логируем отправку в статистику
+            $this->logEmailSend($product_id, $product_name, $email, $calculation);
         } catch (\Exception $e) {
             $json['error'] = $this->language->get('error_email_send');
         }
 
         $this->response->addHeader('Content-Type: application/json');
         $this->response->setOutput(json_encode($json));
+    }
+
+    private function logEmailSend($product_id, $product_name, $email, $calculation) {
+        $this->ensureStatisticsSchema();
+
+        $ip_address = '';
+        if (isset($this->request->server['HTTP_X_FORWARDED_FOR'])) {
+            $ip_address = $this->request->server['HTTP_X_FORWARDED_FOR'];
+        } elseif (isset($this->request->server['HTTP_CLIENT_IP'])) {
+            $ip_address = $this->request->server['HTTP_CLIENT_IP'];
+        } elseif (isset($this->request->server['REMOTE_ADDR'])) {
+            $ip_address = $this->request->server['REMOTE_ADDR'];
+        }
+
+        $product_price = isset($calculation['product_price']) ? (float)$calculation['product_price'] : null;
+        $product_price_regular = isset($calculation['product_price_regular']) ? (float)$calculation['product_price_regular'] : null;
+        $clients_per_day = isset($calculation['clients_per_day']) ? (int)$calculation['clients_per_day'] : null;
+        $procedure_cost = isset($calculation['procedure_cost']) ? (float)$calculation['procedure_cost'] : null;
+        $working_days = isset($calculation['working_days']) ? (int)$calculation['working_days'] : null;
+        $rent = isset($calculation['rent']) ? (float)$calculation['rent'] : null;
+        $utilities = isset($calculation['utilities']) ? (float)$calculation['utilities'] : null;
+        $master_percent = isset($calculation['master_percent']) ? (float)$calculation['master_percent'] : null;
+        $payback_months = isset($calculation['payback_days_raw']) && isset($calculation['monthly_profit_raw']) && $calculation['monthly_profit_raw'] > 0 ? round($calculation['payback_days_raw'] / 30, 1) : null;
+        $payback_months_regular = isset($calculation['payback_days_regular_raw']) && $calculation['payback_days_regular_raw'] > 0 ? round($calculation['payback_days_regular_raw'] / 30, 1) : null;
+
+        $this->db->query("
+            INSERT INTO `" . DB_PREFIX . "ml_calc_statistics`
+            SET `product_id` = '" . (int)$product_id . "',
+                `product_name` = '" . $this->db->escape($product_name) . "',
+                `ip_address` = '" . $this->db->escape($ip_address) . "',
+                `changed_parameter` = 'email_send',
+                `product_price` = " . ($product_price !== null ? "'" . (float)$product_price . "'" : "NULL") . ",
+                `clients_per_day` = " . ($clients_per_day !== null ? "'" . (int)$clients_per_day . "'" : "NULL") . ",
+                `procedure_cost` = " . ($procedure_cost !== null ? "'" . (float)$procedure_cost . "'" : "NULL") . ",
+                `working_days` = " . ($working_days !== null ? "'" . (int)$working_days . "'" : "NULL") . ",
+                `rent` = " . ($rent !== null ? "'" . (float)$rent . "'" : "NULL") . ",
+                `utilities` = " . ($utilities !== null ? "'" . (float)$utilities . "'" : "NULL") . ",
+                `master_percent` = " . ($master_percent !== null ? "'" . (float)$master_percent . "'" : "NULL") . ",
+                `payback_months` = " . ($payback_months !== null ? "'" . (float)$payback_months . "'" : "NULL") . ",
+                `payback_months_regular` = " . ($payback_months_regular !== null ? "'" . (float)$payback_months_regular . "'" : "NULL") . ",
+                `value_old` = NULL,
+                `value_new` = '" . $this->db->escape($email) . "',
+                `email` = '" . $this->db->escape($email) . "',
+                `date_added` = NOW()
+        ");
     }
 
     public function saveStatistics() {
@@ -876,6 +924,7 @@ class ControllerExtensionModuleMLCalc extends Controller {
                 `payback_months_regular` decimal(10,2) DEFAULT NULL,
                 `value_old` decimal(15,4) DEFAULT NULL,
                 `value_new` decimal(15,4) DEFAULT NULL,
+                `email` varchar(255) DEFAULT NULL,
                 `date_added` datetime NOT NULL,
                 PRIMARY KEY (`id`),
                 KEY `product_id` (`product_id`),
@@ -888,7 +937,8 @@ class ControllerExtensionModuleMLCalc extends Controller {
             'payback_months' => 'ADD COLUMN `payback_months` decimal(10,2) DEFAULT NULL AFTER `master_percent`',
             'payback_months_regular' => 'ADD COLUMN `payback_months_regular` decimal(10,2) DEFAULT NULL AFTER `payback_months`',
             'value_old' => 'ADD COLUMN `value_old` decimal(15,4) DEFAULT NULL AFTER `payback_months_regular`',
-            'value_new' => 'ADD COLUMN `value_new` decimal(15,4) DEFAULT NULL AFTER `value_old`'
+            'value_new' => 'ADD COLUMN `value_new` decimal(15,4) DEFAULT NULL AFTER `value_old`',
+            'email' => 'ADD COLUMN `email` varchar(255) DEFAULT NULL AFTER `value_new`'
         );
 
         foreach ($columnsToAdd as $column => $alterSql) {
