@@ -2,7 +2,7 @@
 class ControllerExtensionModuleMlCalc extends Controller {
     private $error = array();
 
-    const VERSION = '1.7.8';
+    const VERSION = '1.7.9';
 
     public function index() {
         $this->load->language('extension/module/ml_calc');
