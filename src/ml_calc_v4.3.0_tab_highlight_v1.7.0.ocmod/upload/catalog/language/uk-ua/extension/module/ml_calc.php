@@ -35,6 +35,10 @@ $_['text_email_subject_generic'] = 'обраного обладнання';
 $_['text_email_intro'] = 'Ваш розрахунок окупності для %s:';
 $_['text_email_inputs'] = 'Введені параметри:';
 $_['text_email_footer'] = 'Лист відправлено автоматично з сайту %s.';
+$_['text_email_product'] = 'Товар';
+$_['text_email_product_link'] = 'Посилання на товар';
+$_['text_email_product_price'] = 'Поточна ціна';
+$_['text_email_product_price_regular'] = 'Звичайна ціна';
 $_['button_send_email'] = 'Надіслати розрахунок';
 
 // Tab

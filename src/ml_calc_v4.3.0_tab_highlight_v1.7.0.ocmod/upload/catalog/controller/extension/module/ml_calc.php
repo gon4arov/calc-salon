@@ -395,6 +395,12 @@ class ControllerExtensionModuleMLCalc extends Controller {
 
         $lines = array();
         $lines[] = sprintf($this->language->get('text_email_intro'), $product_name ? $product_name : $this->language->get('text_email_subject_generic'));
+        $lines[] = $this->language->get('text_email_product') . ': ' . ($product_name ? $product_name : $this->language->get('text_email_subject_generic'));
+        $lines[] = $this->language->get('text_email_product_link') . ': ' . $this->url->link('product/product', 'product_id=' . $product_id);
+        $lines[] = $this->language->get('text_email_product_price') . ': ' . $formatCurrency($calculation['product_price']);
+        if (!empty($calculation['product_price_regular'])) {
+            $lines[] = $this->language->get('text_email_product_price_regular') . ': ' . $formatCurrency($calculation['product_price_regular']);
+        }
         $lines[] = '';
         $lines[] = $this->language->get('text_payback') . ': ' . $calculation['payback_text'];
         if (!empty($calculation['payback_text_regular']) && !empty($calculation['has_regular_price'])) {
@@ -421,9 +427,20 @@ class ControllerExtensionModuleMLCalc extends Controller {
 
         $product_name_safe = htmlspecialchars($product_name ? $product_name : $this->language->get('text_email_subject_generic'), ENT_QUOTES, 'UTF-8');
         $company_name_safe = htmlspecialchars($this->config->get('config_name'), ENT_QUOTES, 'UTF-8');
+        $product_link = $this->url->link('product/product', 'product_id=' . $product_id);
+        $product_link_safe = htmlspecialchars($product_link, ENT_QUOTES, 'UTF-8');
 
         $html = '<div style="font-family: Arial, sans-serif; color: #222; max-width: 640px;">';
         $html .= '<h2 style="margin: 0 0 12px; font-size: 20px;">' . sprintf($this->language->get('text_email_intro'), $product_name_safe) . '</h2>';
+
+        $html .= '<div style="margin-bottom:12px; padding:12px 14px; border:1px solid #e9ecef; border-radius:8px;">';
+        $html .= '<div style="font-size:16px; font-weight:600; margin-bottom:6px;">' . $product_name_safe . '</div>';
+        $html .= '<div style="margin-bottom:6px;"><a href="' . $product_link_safe . '" style="color:#0d6efd; text-decoration:none;">' . $product_link_safe . '</a></div>';
+        $html .= '<div style="font-size:14px; color:#111;">' . $this->language->get('text_email_product_price') . ': <strong>' . htmlspecialchars($formatCurrency($calculation['product_price']), ENT_QUOTES, 'UTF-8') . '</strong></div>';
+        if (!empty($calculation['product_price_regular'])) {
+            $html .= '<div style="font-size:13px; color:#555;">' . $this->language->get('text_email_product_price_regular') . ': ' . htmlspecialchars($formatCurrency($calculation['product_price_regular']), ENT_QUOTES, 'UTF-8') . '</div>';
+        }
+        $html .= '</div>';
 
         $html .= '<div style="background:#f8f9fa; border:1px solid #e9ecef; border-radius:8px; padding:16px; margin-bottom:16px;">';
         $html .= '<h3 style="margin:0 0 10px; font-size:16px; color:#111;">' . $this->language->get('text_payback') . '</h3>';
@@ -722,6 +739,8 @@ class ControllerExtensionModuleMLCalc extends Controller {
         $json['rent'] = (float)$rent;
         $json['utilities'] = (float)$utilities;
         $json['master_percent'] = (float)$master_percent;
+        $json['product_price'] = (float)$product_price;
+        $json['product_price_regular'] = (float)$product_price_regular;
 
         if ($net_profit > 0) {
             $payback_days = $product_price / $net_profit * 30; // Окупаемость в днях

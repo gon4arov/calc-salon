@@ -35,6 +35,10 @@ $_['text_email_subject_generic'] = 'your selected product';
 $_['text_email_intro'] = 'Here is your payback calculation for %s:';
 $_['text_email_inputs'] = 'Your input parameters:';
 $_['text_email_footer'] = 'Message sent automatically from %s.';
+$_['text_email_product'] = 'Product';
+$_['text_email_product_link'] = 'Product link';
+$_['text_email_product_price'] = 'Current price';
+$_['text_email_product_price_regular'] = 'Regular price';
 $_['button_send_email'] = 'Send calculation';
 
 // Tab
