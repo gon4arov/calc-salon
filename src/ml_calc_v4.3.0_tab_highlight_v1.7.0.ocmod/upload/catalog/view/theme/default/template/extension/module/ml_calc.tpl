@@ -207,14 +207,15 @@
 }
 .ml-calc-email {
     margin-top: 18px;
-    padding: 14px 16px;
-    background: #fff;
-    border: 1px solid #e9ecef;
-    border-radius: 10px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 0;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 10px;
+    justify-content: center;
+    gap: 12px;
     width: 100%;
 }
 .ml-calc-email__label {
@@ -226,6 +227,7 @@
     flex-wrap: wrap;
     gap: 10px;
     align-items: center;
+    justify-content: center;
 }
 .ml-calc-email input[type="email"] {
     min-width: 240px;
