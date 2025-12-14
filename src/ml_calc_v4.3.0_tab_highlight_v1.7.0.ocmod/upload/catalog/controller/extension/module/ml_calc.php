@@ -478,8 +478,7 @@ class ControllerExtensionModuleMLCalc extends Controller {
         $paybackRows = array(
             array($this->language->get('text_payback'), $calculation['payback_text']),
             (!empty($calculation['payback_text_regular']) && !empty($calculation['has_regular_price'])) ? array($this->language->get('text_payback_regular'), $calculation['payback_text_regular']) : null,
-            array($this->language->get('text_profit'), $formatCurrency($calculation['annual_profit_raw'])),
-            array($this->language->get('text_monthly_profit'), $formatCurrency($calculation['monthly_profit_raw']))
+            array($this->language->get('text_profit'), $formatCurrency($calculation['annual_profit_raw']))
         );
         foreach ($paybackRows as $row) {
             if (!$row) {
@@ -506,7 +505,10 @@ class ControllerExtensionModuleMLCalc extends Controller {
         foreach ($rows as $row) {
             $html .= '<tr>';
             $color = isset($row[2]) ? $row[2] : '#222';
-            $html .= '<td style="padding:8px 12px; border-top:1px solid #e9ecef;">' . htmlspecialchars($row[0], ENT_QUOTES, 'UTF-8') . '</td>';
+            $paddingLeft = ($row[0] === $this->language->get('text_monthly_rent') ||
+                            $row[0] === $this->language->get('text_monthly_utilities') ||
+                            $row[0] === $this->language->get('text_monthly_master')) ? ' padding-left:28px;' : '';
+            $html .= '<td style="padding:8px 12px; border-top:1px solid #e9ecef;' . $paddingLeft . '">' . htmlspecialchars($row[0], ENT_QUOTES, 'UTF-8') . '</td>';
             $html .= '<td style="padding:8px 12px; border-top:1px solid #e9ecef; text-align:right; font-weight:600; color:' . htmlspecialchars($color, ENT_QUOTES, 'UTF-8') . ';">' . htmlspecialchars($row[1], ENT_QUOTES, 'UTF-8') . '</td>';
             $html .= '</tr>';
         }
