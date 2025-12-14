@@ -95,6 +95,9 @@ $_['help_result_tooltips']              = 'При наведении на рез
 
 // Statistics
 $_['text_statistics']                   = 'Статистика использования';
+$_['text_email_statistics']             = 'Отправки на email';
+$_['text_email_statistics_total']       = 'Всего отправок: %s';
+$_['text_email_statistics_recent']      = 'Показаны последние %s записей';
 $_['text_no_results']                   = 'Нет данных для отображения';
 $_['text_statistics_cleared']           = 'Статистика успешно очищена!';
 $_['column_calc_number']                = '№ расчета';

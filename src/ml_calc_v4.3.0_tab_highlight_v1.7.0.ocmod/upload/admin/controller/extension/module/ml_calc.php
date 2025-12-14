@@ -2,7 +2,7 @@
 class ControllerExtensionModuleMlCalc extends Controller {
     private $error = array();
 
-    const VERSION = '1.9.0';
+    const VERSION = '1.9.1';
 
     public function index() {
         $this->load->language('extension/module/ml_calc');
@@ -562,6 +562,9 @@ class ControllerExtensionModuleMlCalc extends Controller {
         $data['column_ip'] = $this->language->get('column_ip');
         $data['column_email'] = $this->language->get('column_email');
         $data['column_date'] = $this->language->get('column_date');
+        $data['text_email_statistics'] = $this->language->get('text_email_statistics');
+        $data['text_email_statistics_total'] = $this->language->get('text_email_statistics_total');
+        $data['text_email_statistics_recent'] = $this->language->get('text_email_statistics_recent');
         $data['button_clear'] = $this->language->get('button_clear');
         $data['button_back'] = $this->language->get('button_back');
         $data['button_export_xls'] = $this->language->get('button_export_xls');
@@ -728,6 +731,35 @@ class ControllerExtensionModuleMlCalc extends Controller {
         // calc_number уже определен заранее
 
         $data['total'] = $total_records;
+
+        // Статистика отправок на email
+        $email_limit = 200;
+        $email_count_query = $this->db->query("
+            SELECT COUNT(*) as total
+            FROM `" . DB_PREFIX . "ml_calc_statistics`
+            WHERE `changed_parameter` = 'email_send'
+        ");
+        $data['email_total'] = isset($email_count_query->row['total']) ? (int)$email_count_query->row['total'] : 0;
+
+        $email_query = $this->db->query("
+            SELECT *
+            FROM `" . DB_PREFIX . "ml_calc_statistics`
+            WHERE `changed_parameter` = 'email_send'
+            ORDER BY `date_added` DESC
+            LIMIT " . (int)$email_limit . "
+        ");
+
+        $data['email_statistics'] = array();
+        foreach ($email_query->rows as $row) {
+            $data['email_statistics'][] = array(
+                'product_url'  => $catalog_base . '/index.php?route=product/product&product_id=' . (int)$row['product_id'],
+                'product_name' => $row['product_name'],
+                'email'        => isset($row['email']) ? htmlspecialchars($row['email'], ENT_QUOTES, 'UTF-8') : '',
+                'ip_address'   => $row['ip_address'],
+                'date_added'   => date('d.m.Y H:i', strtotime($row['date_added']))
+            );
+        }
+        $data['email_limit'] = $email_limit;
 
         // Пагинация
         $pagination = new Pagination();

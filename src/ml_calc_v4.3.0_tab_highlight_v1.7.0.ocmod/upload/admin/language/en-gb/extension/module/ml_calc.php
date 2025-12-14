@@ -95,6 +95,9 @@ $_['help_result_tooltips']              = 'When hovering over results (payback, 
 
 // Statistics
 $_['text_statistics']                   = 'Usage Statistics';
+$_['text_email_statistics']             = 'Email sends';
+$_['text_email_statistics_total']       = 'Total email sends: %s';
+$_['text_email_statistics_recent']      = 'Showing the latest %s records';
 $_['text_no_results']                   = 'No data to display';
 $_['text_statistics_cleared']           = 'Statistics cleared successfully!';
 $_['column_calc_number']                = 'Calc #';

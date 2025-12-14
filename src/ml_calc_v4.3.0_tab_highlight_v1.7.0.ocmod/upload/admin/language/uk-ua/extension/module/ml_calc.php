@@ -92,6 +92,9 @@ $_['help_result_tooltips']              = 'При наведенні на рез
 
 // Statistics
 $_['text_statistics']                   = 'Статистика використання';
+$_['text_email_statistics']             = 'Надсилання на email';
+$_['text_email_statistics_total']       = 'Всього відправлень: %s';
+$_['text_email_statistics_recent']      = 'Показано останні %s записів';
 $_['text_no_results']                   = 'Немає даних для відображення';
 $_['text_statistics_cleared']           = 'Статистику успішно очищено!';
 $_['column_calc_number']                = '№ розрахунку';
