@@ -1,6 +1,6 @@
 <?php
 class ControllerExtensionModuleMlSalonCalc extends Controller {
-    const VERSION = '1.0.26';
+    const VERSION = '1.0.27';
 
     public function index() {
         $this->load->language('extension/module/ml_salon_calc');
@@ -115,7 +115,7 @@ class ControllerExtensionModuleMlSalonCalc extends Controller {
                 $filterNames = $this->db->query("
                     SELECT DISTINCT fd.filter_id
                     FROM `" . DB_PREFIX . "ocfilter_filter_description` fd
-                    WHERE LOWER(fd.name) LIKE '%процедур%'
+                    WHERE (LOWER(fd.name) LIKE '%види процедур%' OR LOWER(fd.name) LIKE '%виды процедур%')
                 ");
                 foreach ($filterNames->rows as $row) {
                     $filter_ids[] = (int)$row['filter_id'];
