@@ -1,6 +1,6 @@
 <?php
 class ControllerExtensionModuleMlSalonCalc extends Controller {
-    const VERSION = '1.0.28';
+    const VERSION = '1.0.29';
 
     public function index() {
         $this->load->language('extension/module/ml_salon_calc');

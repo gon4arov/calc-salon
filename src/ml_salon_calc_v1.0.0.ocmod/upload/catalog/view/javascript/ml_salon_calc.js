@@ -317,9 +317,18 @@
       }
     });
     if (!els.procedures) return;
+
+    // Сброс класса is-covered
+    els.procedures.querySelectorAll('.ml-salon__procedure').forEach(function(lbl) {
+      lbl.classList.remove('is-covered');
+    });
+
     els.procedures.querySelectorAll('input[type="checkbox"]').forEach(function(input) {
       if (tags.has(input.value)) {
         input.checked = true;
+        if (input.parentElement && input.parentElement.classList.contains('ml-salon__procedure')) {
+          input.parentElement.classList.add('is-covered');
+        }
       }
     });
   }

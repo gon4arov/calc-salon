@@ -10,7 +10,8 @@
 .ml-salon__globals label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
 .ml-salon__globals input { padding: 8px; border: 1px solid #ced4da; border-radius: 6px; }
 .ml-salon__procedures { display: flex; flex-wrap: wrap; gap: 8px; }
-.ml-salon__procedure { border: 1px solid #d0d7de; padding: 6px 10px; border-radius: 6px; background: #f8fafc; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+.ml-salon__procedure { border: 1px solid #d0d7de; padding: 6px 10px; border-radius: 6px; background: #f8fafc; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s ease; }
+.ml-salon__procedure.is-covered { background-color: #d1e7dd; border-color: #badbcc; color: #0f5132; }
 .ml-salon__suggestions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .ml-salon__chip { border: 1px solid #d0d7de; background: #fff; border-radius: 20px; padding: 6px 12px; cursor: pointer; }
 .ml-salon__add { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; margin-bottom: 10px; }
