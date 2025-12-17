@@ -1,6 +1,6 @@
 <?php
 class ControllerExtensionModuleMlSalonCalc extends Controller {
-    const VERSION = '1.0.27';
+    const VERSION = '1.0.28';
 
     public function index() {
         $this->load->language('extension/module/ml_salon_calc');
@@ -110,70 +110,84 @@ class ControllerExtensionModuleMlSalonCalc extends Controller {
 
             $ocfilterExists = $this->db->query("SHOW TABLES LIKE '" . DB_PREFIX . "ocfilter_filter_value_to_product'");
             if ($ocfilterExists->num_rows) {
-                // Ищем группу "Види процедур, що виконуються апаратом" по имени (fallback — ID 2)
-                $filter_ids = array();
+                // 1. Ищем группу (пары filter_id + source)
+                $filter_cond_parts = array();
                 $filterNames = $this->db->query("
-                    SELECT DISTINCT fd.filter_id
+                    SELECT DISTINCT fd.filter_id, fd.source
                     FROM `" . DB_PREFIX . "ocfilter_filter_description` fd
                     WHERE (LOWER(fd.name) LIKE '%види процедур%' OR LOWER(fd.name) LIKE '%виды процедур%')
                 ");
+                
                 foreach ($filterNames->rows as $row) {
-                    $filter_ids[] = (int)$row['filter_id'];
-                }
-                if (empty($filter_ids)) {
-                    $filter_ids[] = 2;
+                    $filter_cond_parts[] = "(filter_id = '" . (int)$row['filter_id'] . "' AND source = '" . (int)$row['source'] . "')";
                 }
 
-                $filter_ids_sql = implode(',', $filter_ids);
+                // Fallback (ID 2), если ничего не нашли
+                if (empty($filter_cond_parts)) {
+                     // Пытаемся найти source для ID 2
+                     $check2 = $this->db->query("SELECT source FROM `" . DB_PREFIX . "ocfilter_filter_description` WHERE filter_id = '2' AND (name LIKE '%процедур%' OR name LIKE '%rocedur%') LIMIT 1");
+                     if ($check2->num_rows) {
+                         $filter_cond_parts[] = "(filter_id = '2' AND source = '" . (int)$check2->row['source'] . "')";
+                     }
+                }
 
-                // 1) Список процедур (значений) по найденным filter_id
-                $procedure_values = $this->db->query("
-                    SELECT DISTINCT fvd.value_id, fvd.name, fvd.language_id, fvd.filter_id
-                    FROM `" . DB_PREFIX . "ocfilter_filter_value_description` fvd
-                    WHERE fvd.filter_id IN (" . $filter_ids_sql . ")
-                    ORDER BY (fvd.language_id = '" . (int)$language_id . "') DESC, fvd.name ASC
-                ");
+                if (!empty($filter_cond_parts)) {
+                    $filter_where = " AND (" . implode(" OR ", $filter_cond_parts) . ")";
+                    
+                    // 2. Значения (фильтруем по id+source)
+                    $procedure_values = $this->db->query("
+                        SELECT DISTINCT fvd.value_id, fvd.name, fvd.language_id
+                        FROM `" . DB_PREFIX . "ocfilter_filter_value_description` fvd
+                        WHERE 1 " . $filter_where . "
+                        ORDER BY (fvd.language_id = '" . (int)$language_id . "') DESC, fvd.name ASC
+                    ");
 
-                // 2) Привязки процедур к товарам из группы
-                $device_tags = array();
-                $value_filter_sql = '';
-                if ($procedure_values->num_rows) {
+                    // Убираем дубли языков (берем первый, т.к. отсортировано по language_id)
+                    $temp_procedures = array();
                     $value_ids = array();
                     foreach ($procedure_values->rows as $row) {
-                        $value_ids[] = (int)$row['value_id'];
+                        $vid = (int)$row['value_id'];
+                        if (!isset($temp_procedures[$vid])) {
+                            $temp_procedures[$vid] = array(
+                                'id' => 'ocf_' . $vid,
+                                'name' => $row['name']
+                            );
+                            $value_ids[] = $vid;
+                        }
                     }
-                    $value_filter_sql = " AND fvp.value_id IN (" . implode(',', $value_ids) . ")";
-                }
+                    $procedures = array_values($temp_procedures);
 
-                $ocfBindings = $this->db->query("
-                    SELECT fvp.product_id, fvp.value_id
-                    FROM `" . DB_PREFIX . "ocfilter_filter_value_to_product` fvp
-                    WHERE fvp.product_id IN (" . $product_ids_sql . ")
-                      AND fvp.filter_id IN (" . $filter_ids_sql . ")
-                      " . $value_filter_sql . "
-                ");
+                    // 3. Привязки к товарам (фильтруем по product_id и (filter_id+source))
+                    if (!empty($value_ids)) {
+                        $filter_where_fvp = str_replace(array('filter_id', 'source'), array('fvp.filter_id', 'fvp.source'), $filter_where);
+                        // Дополнительно фильтруем по value_id, чтобы не зацепить лишнее (хотя filter+source уже должны ограничить)
+                        $value_ids_sql = implode(',', $value_ids);
+                        
+                        $ocfBindings = $this->db->query("
+                            SELECT fvp.product_id, fvp.value_id
+                            FROM `" . DB_PREFIX . "ocfilter_filter_value_to_product` fvp
+                            WHERE fvp.product_id IN (" . $product_ids_sql . ")
+                              " . $filter_where_fvp . "
+                              AND fvp.value_id IN (" . $value_ids_sql . ")
+                        ");
 
-                foreach ($ocfBindings->rows as $row) {
-                    $pid = (int)$row['product_id'];
-                    if (!isset($device_tags[$pid])) {
-                        $device_tags[$pid] = array();
+                        $device_tags = array();
+                        foreach ($ocfBindings->rows as $row) {
+                            $pid = (int)$row['product_id'];
+                            if (!isset($device_tags[$pid])) {
+                                $device_tags[$pid] = array();
+                            }
+                            $device_tags[$pid][] = 'ocf_' . (string)$row['value_id'];
+                        }
+
+                        foreach ($devices as &$dev) {
+                            $pid = (int)$dev['id'];
+                            if (isset($device_tags[$pid])) {
+                                $dev['tags'] = $device_tags[$pid];
+                            }
+                        }
+                        unset($dev);
                     }
-                    $device_tags[$pid][] = 'ocf_' . (string)$row['value_id'];
-                }
-
-                foreach ($devices as &$dev) {
-                    $pid = (int)$dev['id'];
-                    if (isset($device_tags[$pid])) {
-                        $dev['tags'] = $device_tags[$pid];
-                    }
-                }
-                unset($dev);
-
-                foreach ($procedure_values->rows as $row) {
-                    $procedures[] = array(
-                        'id' => 'ocf_' . (string)$row['value_id'],
-                        'name' => $row['name']
-                    );
                 }
 
                 // Если в OCFilter ничего не нашли, пробуем классический OcFilter-опции (ocfilter_option_* таблицы)
