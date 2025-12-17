@@ -1,6 +1,6 @@
 <?php
 class ControllerExtensionModuleMlSalonCalc extends Controller {
-    const VERSION = '1.0.2';
+    const VERSION = '1.0.3';
 
     public function index() {
         $this->load->language('extension/module/ml_salon_calc');
@@ -173,7 +173,7 @@ class ControllerExtensionModuleMlSalonCalc extends Controller {
         $data['content_bottom'] = $this->load->controller('common/content_bottom');
         $data['footer'] = $this->load->controller('common/footer');
 
-        return $this->load->view('extension/module/ml_salon_calc', $data);
+        $this->response->setOutput($this->load->view('extension/module/ml_salon_calc', $data));
     }
 
     public function sendEmail() {
