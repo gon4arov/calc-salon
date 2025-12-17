@@ -47,21 +47,21 @@
                   <tr>
                     <td style="width: 40px;" class="text-center"><input type="checkbox" onclick="$('input[name*=\\'selected\\']').prop('checked', this.checked);" /></td>
                     <td class="text-center" style="width: 60px;"><?php echo $column_calc_number; ?></td>
-                    <td class="text-left"><?php echo $column_product; ?></td>
-                    <td class="text-left"><?php echo $column_changed_parameter; ?></td>
-                    <td class="text-right"><?php echo $column_value_old; ?></td>
-                    <td class="text-right"><?php echo $column_value_new; ?></td>
-                    <td class="text-right"><?php echo $column_payback_special; ?></td>
-                    <td class="text-right"><?php echo $column_payback_regular; ?></td>
-                    <td class="text-right"><?php echo $column_clients_per_day; ?></td>
-                    <td class="text-right"><?php echo $column_procedure_cost; ?></td>
-                    <td class="text-right"><?php echo $column_working_days; ?></td>
-                    <td class="text-right"><?php echo $column_rent; ?></td>
-                    <td class="text-right"><?php echo $column_utilities; ?></td>
-                    <td class="text-right"><?php echo $column_master_percent; ?></td>
-                    <td class="text-left"><?php echo $column_ip; ?></td>
-                    <td class="text-left"><?php echo $column_email; ?></td>
-                    <td class="text-left"><?php echo $column_date; ?></td>
+                    <td class="text-center"><?php echo $column_product; ?></td>
+                    <td class="text-center"><?php echo $column_changed_parameter; ?></td>
+                    <td class="text-center"><?php echo $column_value_old; ?></td>
+                    <td class="text-center"><?php echo $column_value_new; ?></td>
+                    <td class="text-center"><?php echo $column_payback_special; ?></td>
+                    <td class="text-center"><?php echo $column_payback_regular; ?></td>
+                    <td class="text-center"><?php echo $column_clients_per_day; ?></td>
+                    <td class="text-center"><?php echo $column_procedure_cost; ?></td>
+                    <td class="text-center"><?php echo $column_working_days; ?></td>
+                    <td class="text-center"><?php echo $column_rent; ?></td>
+                    <td class="text-center"><?php echo $column_utilities; ?></td>
+                    <td class="text-center"><?php echo $column_master_percent; ?></td>
+                    <td class="text-center"><?php echo $column_ip; ?></td>
+                    <td class="text-center"><?php echo $column_email; ?></td>
+                    <td class="text-center"><?php echo $column_date; ?></td>
                   </tr>
                 </thead>
                 <tbody>
@@ -105,10 +105,10 @@
               <table class="table table-bordered table-hover">
                 <thead>
                   <tr>
-                    <td class="text-left" style="width: 50%;"><?php echo $column_product; ?></td>
-                    <td class="text-left" style="width: 25%;"><?php echo $column_email; ?></td>
-                    <td class="text-left" style="width: 15%;"><?php echo $column_ip; ?></td>
-                    <td class="text-left" style="width: 10%;"><?php echo $column_date; ?></td>
+                    <td class="text-center" style="width: 50%;"><?php echo $column_product; ?></td>
+                    <td class="text-center" style="width: 25%;"><?php echo $column_email; ?></td>
+                    <td class="text-center" style="width: 15%;"><?php echo $column_ip; ?></td>
+                    <td class="text-center" style="width: 10%;"><?php echo $column_date; ?></td>
                   </tr>
                 </thead>
                 <tbody>

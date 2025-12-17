@@ -2,10 +2,11 @@
 class ControllerExtensionModuleMlCalc extends Controller {
     private $error = array();
 
-    const VERSION = '1.9.1';
+    const VERSION = '1.12.2';
 
     public function index() {
         $this->load->language('extension/module/ml_calc');
+        $this->ensureStatisticsSchema();
 
         $this->document->setTitle($this->language->get('heading_title'));
 
@@ -851,35 +852,38 @@ class ControllerExtensionModuleMlCalc extends Controller {
         }
         $nextNumber = $counter;
 
-        // Формируем XLS (HTML таблица с заголовком Excel)
-        $output = '<!DOCTYPE html>';
-        $output .= '<html>';
-        $output .= '<head>';
-        $output .= '<meta charset="UTF-8">';
-        $output .= '<style>table { border-collapse: collapse; } th, td { border: 1px solid #000; padding: 5px; text-align: left; } td.number { text-align: right; }</style>';
-        $output .= '</head>';
-        $output .= '<body>';
-        $output .= '<table>';
-        $output .= '<thead>';
-        $output .= '<tr>';
-        $output .= '<th>' . $this->language->get('column_calc_number') . '</th>';
-        $output .= '<th>' . $this->language->get('column_product') . '</th>';
-        $output .= '<th>' . $this->language->get('column_changed_parameter') . '</th>';
-        $output .= '<th>' . $this->language->get('column_value_old') . '</th>';
-        $output .= '<th>' . $this->language->get('column_value_new') . '</th>';
-        $output .= '<th>' . $this->language->get('column_payback_special') . '</th>';
-        $output .= '<th>' . $this->language->get('column_payback_regular') . '</th>';
-        $output .= '<th>' . $this->language->get('column_clients_per_day') . '</th>';
-        $output .= '<th>' . $this->language->get('column_procedure_cost') . '</th>';
-        $output .= '<th>' . $this->language->get('column_working_days') . '</th>';
-        $output .= '<th>' . $this->language->get('column_rent') . '</th>';
-        $output .= '<th>' . $this->language->get('column_utilities') . '</th>';
-        $output .= '<th>' . $this->language->get('column_master_percent') . '</th>';
-        $output .= '<th>' . $this->language->get('column_ip') . '</th>';
-        $output .= '<th>' . $this->language->get('column_date') . '</th>';
-        $output .= '</tr>';
-        $output .= '</thead>';
-        $output .= '<tbody>';
+        // Формируем XLSX (чистый OpenXML, чтобы Excel не ругался на формат)
+        $xmlRows = array();
+        $addCell = function ($value) {
+            $escaped = htmlspecialchars((string)$value, ENT_QUOTES | ENT_XML1, 'UTF-8');
+            return '<c t="inlineStr"><is><t>' . $escaped . '</t></is></c>';
+        };
+        $headers = array(
+            $this->language->get('column_calc_number'),
+            $this->language->get('column_product'),
+            $this->language->get('column_changed_parameter'),
+            $this->language->get('column_value_old'),
+            $this->language->get('column_value_new'),
+            $this->language->get('column_payback_special'),
+            $this->language->get('column_payback_regular'),
+            $this->language->get('column_clients_per_day'),
+            $this->language->get('column_procedure_cost'),
+            $this->language->get('column_working_days'),
+            $this->language->get('column_rent'),
+            $this->language->get('column_utilities'),
+            $this->language->get('column_master_percent'),
+            $this->language->get('column_ip'),
+            $this->language->get('column_email'),
+            $this->language->get('column_date')
+        );
+        $rowIndex = 1;
+        $headerRow = '<row r="' . $rowIndex . '">';
+        foreach ($headers as $headerTitle) {
+            $headerRow .= $addCell($headerTitle);
+        }
+        $headerRow .= '</row>';
+        $xmlRows[] = $headerRow;
+        $rowIndex++;
 
         // Словарь для перевода названий параметров
         $parameter_names = array(
@@ -889,7 +893,8 @@ class ControllerExtensionModuleMlCalc extends Controller {
             'working_days' => $this->language->get('column_working_days'),
             'rent' => $this->language->get('column_rent'),
             'utilities' => $this->language->get('column_utilities'),
-            'master_percent' => $this->language->get('column_master_percent')
+            'master_percent' => $this->language->get('column_master_percent'),
+            'email_send' => $this->language->get('column_email_send')
         );
 
         $formatValue = function($param, $value) {
@@ -953,45 +958,88 @@ class ControllerExtensionModuleMlCalc extends Controller {
                 'rent' => $row['rent'],
                 'utilities' => $row['utilities'],
                 'master_percent' => $row['master_percent'],
+                'email' => isset($row['email']) ? $row['email'] : '',
                 'ip_address' => $row['ip_address'],
                 'date_added' => $row['date_added']
             );
         }
 
         foreach ($rowsBuffer as $row) {
-            $output .= '<tr>';
-            $output .= '<td class="number">' . $row['calc_number'] . '</td>';
-            $output .= '<td>' . htmlspecialchars($row['product_name'], ENT_QUOTES, 'UTF-8') . '</td>';
-            $output .= '<td>' . htmlspecialchars($row['changed_param_display'], ENT_QUOTES, 'UTF-8') . '</td>';
-            $output .= '<td class="number">' . $formatValue($row['changed_param'], $row['row_value_old']) . '</td>';
-            $output .= '<td class="number">' . $formatValue($row['changed_param'], $row['row_value_new']) . '</td>';
-            $output .= '<td class="number">' . $formatPayback($row['payback_special']) . '</td>';
-            $output .= '<td class="number">' . $formatPayback($row['payback_regular']) . '</td>';
-            $output .= '<td class="number">' . ($row['clients_per_day'] !== null ? $row['clients_per_day'] : '-') . '</td>';
-            $output .= '<td class="number">' . ($row['procedure_cost'] !== null ? number_format((float)$row['procedure_cost'], 0, '.', ' ') : '-') . '</td>';
-            $output .= '<td class="number">' . ($row['working_days'] !== null ? $row['working_days'] : '-') . '</td>';
-            $output .= '<td class="number">' . ($row['rent'] !== null ? number_format((float)$row['rent'], 0, '.', ' ') : '-') . '</td>';
-            $output .= '<td class="number">' . ($row['utilities'] !== null ? number_format((float)$row['utilities'], 0, '.', ' ') : '-') . '</td>';
-            $output .= '<td class="number">' . ($row['master_percent'] !== null ? $formatValue('master_percent', $row['master_percent']) : '-') . '</td>';
-            $output .= '<td>' . htmlspecialchars($row['ip_address'], ENT_QUOTES, 'UTF-8') . '</td>';
-            $output .= '<td>' . date('d.m.Y H:i', strtotime($row['date_added'])) . '</td>';
-            $output .= '</tr>';
+            $rowXml = '<row r="' . $rowIndex . '">';
+            $rowXml .= $addCell($row['calc_number']);
+            $rowXml .= $addCell($row['product_name']);
+            $rowXml .= $addCell($row['changed_param_display']);
+            $rowXml .= $addCell($formatValue($row['changed_param'], $row['row_value_old']));
+            $rowXml .= $addCell($formatValue($row['changed_param'], $row['row_value_new']));
+            $rowXml .= $addCell($formatPayback($row['payback_special']));
+            $rowXml .= $addCell($formatPayback($row['payback_regular']));
+            $rowXml .= $addCell($row['clients_per_day'] !== null ? $row['clients_per_day'] : '-');
+            $rowXml .= $addCell($row['procedure_cost'] !== null ? number_format((float)$row['procedure_cost'], 0, '.', ' ') : '-');
+            $rowXml .= $addCell($row['working_days'] !== null ? $row['working_days'] : '-');
+            $rowXml .= $addCell($row['rent'] !== null ? number_format((float)$row['rent'], 0, '.', ' ') : '-');
+            $rowXml .= $addCell($row['utilities'] !== null ? number_format((float)$row['utilities'], 0, '.', ' ') : '-');
+            $rowXml .= $addCell($row['master_percent'] !== null ? $formatValue('master_percent', $row['master_percent']) : '-');
+            $rowXml .= $addCell($row['ip_address']);
+            $rowXml .= $addCell($row['email'] !== '' ? $row['email'] : '-');
+            $rowXml .= $addCell(date('d.m.Y H:i', strtotime($row['date_added'])));
+            $rowXml .= '</row>';
+            $xmlRows[] = $rowXml;
+            $rowIndex++;
         }
 
-        $output .= '</tbody>';
-        $output .= '</table>';
-        $output .= '</body>';
-        $output .= '</html>';
+        $sheetXml  = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+        $sheetXml .= '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">';
+        $sheetXml .= '<sheetData>';
+        $sheetXml .= implode('', $xmlRows);
+        $sheetXml .= '</sheetData>';
+        $sheetXml .= '</worksheet>';
 
-        // Отправляем заголовки для скачивания как XLS
-        header('Content-Type: application/vnd.ms-excel; charset=UTF-8');
-        header('Content-Disposition: attachment; filename="ml_calc_statistics_' . date('Y-m-d_H-i-s') . '.xls"');
+        $workbookXml  = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+        $workbookXml .= '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">';
+        $workbookXml .= '<sheets><sheet name="Statistics" sheetId="1" r:id="rId1"/></sheets>';
+        $workbookXml .= '</workbook>';
+
+        $relsXml  = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+        $relsXml .= '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">';
+        $relsXml .= '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>';
+        $relsXml .= '</Relationships>';
+
+        $workbookRelsXml  = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+        $workbookRelsXml .= '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">';
+        $workbookRelsXml .= '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>';
+        $workbookRelsXml .= '</Relationships>';
+
+        $contentTypesXml  = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
+        $contentTypesXml .= '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">';
+        $contentTypesXml .= '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>';
+        $contentTypesXml .= '<Default Extension="xml" ContentType="application/xml"/>';
+        $contentTypesXml .= '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>';
+        $contentTypesXml .= '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>';
+        $contentTypesXml .= '</Types>';
+
+        $tmpFile = tempnam(sys_get_temp_dir(), 'ml_calc_xlsx_');
+        $zip = new \ZipArchive();
+        if ($zip->open($tmpFile, \ZipArchive::OVERWRITE) !== true) {
+            throw new \Exception('Unable to create XLSX archive');
+        }
+        $zip->addFromString('[Content_Types].xml', $contentTypesXml);
+        $zip->addFromString('_rels/.rels', $relsXml);
+        $zip->addFromString('xl/workbook.xml', $workbookXml);
+        $zip->addFromString('xl/_rels/workbook.xml.rels', $workbookRelsXml);
+        $zip->addFromString('xl/worksheets/sheet1.xml', $sheetXml);
+        $zip->close();
+
+        $xlsxData = file_get_contents($tmpFile);
+        @unlink($tmpFile);
+
+        // Отправляем заголовки для скачивания как XLSX
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename="ml_calc_statistics_' . date('Y-m-d_H-i-s') . '.xlsx"');
         header('Expires: 0');
         header('Cache-Control: must-revalidate, post-check=0, pre-check=0');
         header('Pragma: public');
 
-        echo "\xEF\xBB\xBF"; // UTF-8 BOM
-        echo $output;
+        echo $xlsxData;
         exit;
     }
 
