@@ -1,6 +1,6 @@
 <?php
 class ControllerExtensionModuleMlSalonCalc extends Controller {
-    const VERSION = '1.0.4';
+    const VERSION = '1.0.5';
 
     public function index() {
         $this->load->language('extension/module/ml_salon_calc');
@@ -66,7 +66,7 @@ class ControllerExtensionModuleMlSalonCalc extends Controller {
         $this->load->model('catalog/product');
         $language_id = (int)$this->config->get('config_language_id');
         $products_query = $this->db->query("
-            SELECT p.product_id, p.price, p.tax_class_id, p.special, pd.name
+            SELECT p.product_id, p.price, p.tax_class_id, pd.name
             FROM `" . DB_PREFIX . "product` p
             LEFT JOIN `" . DB_PREFIX . "product_description` pd ON (p.product_id = pd.product_id)
             WHERE p.status = '1' AND p.jan = '1' AND pd.language_id = '" . $language_id . "'
@@ -74,9 +74,26 @@ class ControllerExtensionModuleMlSalonCalc extends Controller {
         ");
 
         $devices = array();
+        $customer_group_id = (int)$this->config->get('config_customer_group_id');
+        $now_date = date('Y-m-d');
+
         foreach ($products_query->rows as $row) {
             $price = isset($row['price']) ? (float)$row['price'] : 0;
-            $special = isset($row['special']) ? (float)$row['special'] : 0;
+            $special = 0.0;
+
+            // Получаем активную спеццену
+            $special_query = $this->db->query("
+                SELECT price FROM `" . DB_PREFIX . "product_special`
+                WHERE product_id = '" . (int)$row['product_id'] . "'
+                  AND customer_group_id = '" . $customer_group_id . "'
+                  AND (date_start = '0000-00-00' OR date_start <= '" . $this->db->escape($now_date) . "')
+                  AND (date_end = '0000-00-00' OR date_end >= '" . $this->db->escape($now_date) . "')
+                ORDER BY priority ASC, price ASC
+                LIMIT 1
+            ");
+            if ($special_query->num_rows) {
+                $special = (float)$special_query->row['price'];
+            }
             $cost = $special > 0 ? $special : $price;
 
             $devices[] = array(
