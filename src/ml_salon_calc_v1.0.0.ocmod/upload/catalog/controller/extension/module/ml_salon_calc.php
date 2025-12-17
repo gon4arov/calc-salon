@@ -1,6 +1,6 @@
 <?php
 class ControllerExtensionModuleMlSalonCalc extends Controller {
-    const VERSION = '1.0.1';
+    const VERSION = '1.0.2';
 
     public function index() {
         $this->load->language('extension/module/ml_salon_calc');
@@ -206,8 +206,8 @@ class ControllerExtensionModuleMlSalonCalc extends Controller {
         $subject = '[' . $this->config->get('config_name') . '] Salon payback calculation';
         $message = "Email: {$email}\n\n" . $payload;
 
-        $this->load->library('mail');
-        $mail = new Mail($this->config->get('config_mail'));
+        require_once(DIR_SYSTEM . 'library/mail.php');
+        $mail = new Mail();
         $mail->protocol = $this->config->get('config_mail_protocol');
         $mail->parameter = $this->config->get('config_mail_parameter');
         $mail->smtp_hostname = $this->config->get('config_mail_smtp_hostname');
