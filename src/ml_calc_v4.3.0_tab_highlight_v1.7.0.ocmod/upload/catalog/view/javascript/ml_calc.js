@@ -463,7 +463,18 @@ window.MLCalc.init = function(wrapper) {
     }
 
     // Функция для сохранения статистики изменения параметра
+    var saveStatsTimeout;
     function saveStatistics(changedParameter, explicitNewValue) {
+        if (saveStatsTimeout) {
+            clearTimeout(saveStatsTimeout);
+        }
+
+        saveStatsTimeout = setTimeout(function() {
+            _performSaveStatistics(changedParameter, explicitNewValue);
+        }, 1000);
+    }
+
+    function _performSaveStatistics(changedParameter, explicitNewValue) {
         if (!productId) {
             return;
         }
@@ -477,7 +488,7 @@ window.MLCalc.init = function(wrapper) {
         var rent = parseFloat(find('#rent-slider').val());
         var utilitiesSlider = find('#utilities-slider');
         var utilities = utilitiesSlider.length ? parseFloat(utilitiesSlider.val()) : 0;
-        var masterPercent = payload.masterPercent;
+        var masterPercent = parseFloat(find('#percent-slider').val()); // Fixed: use parsed value
 
         var newValue = explicitNewValue;
         if (typeof newValue === 'undefined') {

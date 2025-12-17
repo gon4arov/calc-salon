@@ -485,8 +485,8 @@ class ControllerExtensionModuleMLCalc extends Controller {
                 continue;
             }
             $html .= '<tr>';
-            $html .= '<td style="padding:10px 14px; border-top:1px solid #e9ecef;">' . htmlspecialchars($row[0], ENT_QUOTES, 'UTF-8') . '</td>';
-            $html .= '<td style="padding:10px 14px; border-top:1px solid #e9ecef; text-align:right; font-weight:600;">' . htmlspecialchars((string)$row[1], ENT_QUOTES, 'UTF-8') . '</td>';
+            $html .= '<td style="padding:10px 14px; border-top:1px solid #e9ecef; width:55%;">' . htmlspecialchars($row[0], ENT_QUOTES, 'UTF-8') . '</td>';
+            $html .= '<td style="padding:10px 14px; border-top:1px solid #e9ecef; text-align:right; font-weight:600; width:45%; white-space:nowrap;">' . htmlspecialchars((string)$row[1], ENT_QUOTES, 'UTF-8') . '</td>';
             $html .= '</tr>';
         }
         $html .= '</table>';
@@ -586,7 +586,7 @@ class ControllerExtensionModuleMLCalc extends Controller {
     }
 
     private function logEmailSend($product_id, $product_name, $email, $calculation) {
-        $this->ensureStatisticsSchema();
+        // ensureStatisticsSchema removed
 
         $ip_address = '';
         if (isset($this->request->server['HTTP_X_FORWARDED_FOR'])) {
@@ -674,7 +674,7 @@ class ControllerExtensionModuleMLCalc extends Controller {
             return;
         }
 
-        $this->ensureStatisticsSchema();
+        // ensureStatisticsSchema removed
 
         // Получаем IP адрес
         $ip_address = '';
@@ -894,59 +894,6 @@ class ControllerExtensionModuleMLCalc extends Controller {
         $json['annual_profit_raw'] = (float)$annual_profit_raw;
 
         return $json;
-    }
-
-    private function ensureStatisticsSchema() {
-        static $schemaChecked = false;
-
-        if ($schemaChecked) {
-            return;
-        }
-
-        $schemaChecked = true;
-
-        // Создаем таблицу, если она отсутствует (обновление без повторной установки модуля)
-        $this->db->query("
-            CREATE TABLE IF NOT EXISTS `" . DB_PREFIX . "ml_calc_statistics` (
-                `id` int(11) NOT NULL AUTO_INCREMENT,
-                `product_id` int(11) NOT NULL,
-                `product_name` varchar(255) NOT NULL,
-                `ip_address` varchar(45) NOT NULL,
-                `changed_parameter` varchar(50) DEFAULT NULL,
-                `product_price` decimal(15,4) DEFAULT NULL,
-                `clients_per_day` int(11) DEFAULT NULL,
-                `procedure_cost` decimal(15,4) DEFAULT NULL,
-                `working_days` int(11) DEFAULT NULL,
-                `rent` decimal(15,4) DEFAULT NULL,
-                `utilities` decimal(15,4) DEFAULT NULL,
-                `master_percent` decimal(5,2) DEFAULT NULL,
-                `payback_months` decimal(10,2) DEFAULT NULL,
-                `payback_months_regular` decimal(10,2) DEFAULT NULL,
-                `value_old` decimal(15,4) DEFAULT NULL,
-                `value_new` decimal(15,4) DEFAULT NULL,
-                `email` varchar(255) DEFAULT NULL,
-                `date_added` datetime NOT NULL,
-                PRIMARY KEY (`id`),
-                KEY `product_id` (`product_id`),
-                KEY `date_added` (`date_added`),
-                KEY `changed_parameter` (`changed_parameter`)
-            ) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
-        ");
-
-        $columnsToAdd = array(
-            'payback_months' => 'ADD COLUMN `payback_months` decimal(10,2) DEFAULT NULL AFTER `master_percent`',
-            'payback_months_regular' => 'ADD COLUMN `payback_months_regular` decimal(10,2) DEFAULT NULL AFTER `payback_months`',
-            'value_old' => 'ADD COLUMN `value_old` decimal(15,4) DEFAULT NULL AFTER `payback_months_regular`',
-            'value_new' => 'ADD COLUMN `value_new` decimal(15,4) DEFAULT NULL AFTER `value_old`',
-            'email' => 'ADD COLUMN `email` varchar(255) DEFAULT NULL AFTER `value_new`'
-        );
-
-        foreach ($columnsToAdd as $column => $alterSql) {
-            $checkQuery = $this->db->query("SHOW COLUMNS FROM `" . DB_PREFIX . "ml_calc_statistics` LIKE '" . $column . "'");
-            if (!$checkQuery->num_rows) {
-                $this->db->query("ALTER TABLE `" . DB_PREFIX . "ml_calc_statistics` " . $alterSql);
-            }
-        }
     }
 
     private function getMonthWord($count) {
