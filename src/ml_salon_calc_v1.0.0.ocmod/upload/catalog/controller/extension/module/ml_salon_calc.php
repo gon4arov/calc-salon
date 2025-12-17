@@ -1,6 +1,6 @@
 <?php
 class ControllerExtensionModuleMlSalonCalc extends Controller {
-    const VERSION = '1.0.25';
+    const VERSION = '1.0.26';
 
     public function index() {
         $this->load->language('extension/module/ml_salon_calc');
@@ -108,7 +108,7 @@ class ControllerExtensionModuleMlSalonCalc extends Controller {
         if (!empty($product_ids)) {
             $product_ids_sql = implode(',', array_map('intval', $product_ids));
 
-            $ocfilterExists = $this->db->query("SHOW TABLES LIKE '" . DB_PREFIX . "oc_ocfilter_filter_value_to_product'");
+            $ocfilterExists = $this->db->query("SHOW TABLES LIKE '" . DB_PREFIX . "ocfilter_filter_value_to_product'");
             if ($ocfilterExists->num_rows) {
                 // Ищем группу "Види процедур, що виконуються апаратом" по имени (fallback — ID 2)
                 $filter_ids = array();
