@@ -80,27 +80,16 @@
         </operation>
     </file>
 
-    <!-- Add calculator scripts to footer -->
-    <file path="catalog/view/theme/*/template/common/footer.tpl">
+    <!-- Add calculator scripts and CSS only on product pages -->
+    <file path="catalog/view/theme/*/template/product/product.tpl">
         <operation>
             <search><![CDATA[</body>]]></search>
             <add position="before"><![CDATA[
-<!-- ML Calculator Scripts -->
+<!-- ML Calculator Assets (product page only) -->
+<link rel="stylesheet" href="catalog/view/theme/default/template/extension/module/css/ml_calc.css">
 <script src="catalog/view/javascript/ml_calc.js"></script>
 <script src="catalog/view/javascript/ml_calc_shortcode.js"></script>
-<!-- End ML Calculator Scripts -->
-]]></add>
-        </operation>
-    </file>
-
-    <!-- Add calculator CSS to all pages -->
-    <file path="catalog/view/theme/*/template/common/header.tpl">
-        <operation>
-            <search><![CDATA[</head>]]></search>
-            <add position="before"><![CDATA[
-<!-- ML Calculator CSS -->
-<link rel="stylesheet" href="catalog/view/theme/default/template/extension/module/css/ml_calc.css">
-<!-- End ML Calculator CSS -->
+<!-- End ML Calculator Assets -->
 ]]></add>
         </operation>
     </file>

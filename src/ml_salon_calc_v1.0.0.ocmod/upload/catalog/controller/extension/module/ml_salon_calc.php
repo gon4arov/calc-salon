@@ -1,6 +1,6 @@
 <?php
 class ControllerExtensionModuleMlSalonCalc extends Controller {
-    const VERSION = '1.0.5';
+    const VERSION = '1.0.25';
 
     public function index() {
         $this->load->language('extension/module/ml_salon_calc');
@@ -52,16 +52,6 @@ class ControllerExtensionModuleMlSalonCalc extends Controller {
 
         $data['action_send'] = $this->url->link('extension/module/ml_salon_calc/sendEmail', '', true);
 
-        // Справочник процедур
-        $procedures = array(
-            array('id' => 'hair_removal', 'name' => 'Удаление волос'),
-            array('id' => 'rejuvenation', 'name' => 'Омоложение/лифтинг'),
-            array('id' => 'vascular', 'name' => 'Сосудистые/пигмент'),
-            array('id' => 'acne', 'name' => 'Акне/подростковая кожа'),
-            array('id' => 'body', 'name' => 'Коррекция фигуры/липосакция'),
-            array('id' => 'peeling', 'name' => 'Пилинги/фракционная шлифовка')
-        );
-
         // Каталог аппаратов из БД (jan = 1)
         $this->load->model('catalog/product');
         $language_id = (int)$this->config->get('config_language_id');
@@ -74,12 +64,15 @@ class ControllerExtensionModuleMlSalonCalc extends Controller {
         ");
 
         $devices = array();
+        $current_currency = isset($this->session->data['currency']) ? $this->session->data['currency'] : $this->config->get('config_currency');
         $customer_group_id = (int)$this->config->get('config_customer_group_id');
         $now_date = date('Y-m-d');
+        $product_ids = array();
 
         foreach ($products_query->rows as $row) {
             $price = isset($row['price']) ? (float)$row['price'] : 0;
             $special = 0.0;
+            $product_ids[] = (int)$row['product_id'];
 
             // Получаем активную спеццену
             $special_query = $this->db->query("
@@ -94,45 +87,196 @@ class ControllerExtensionModuleMlSalonCalc extends Controller {
             if ($special_query->num_rows) {
                 $special = (float)$special_query->row['price'];
             }
-            $cost = $special > 0 ? $special : $price;
+            $cost_base = $special > 0 ? $special : $price;
+            $cost_taxed = $this->tax->calculate($cost_base, $row['tax_class_id'], $this->config->get('config_tax'));
+            $cost_raw = $this->currency->format($cost_taxed, $current_currency, '', false); // число в текущей валюте
+            $cost_formatted = $this->currency->format($cost_taxed, $current_currency);      // строка с символом
 
             $devices[] = array(
                 'id' => (string)$row['product_id'],
                 'name' => $row['name'],
-                'cost' => $cost,
+                'cost' => $cost_formatted,
+                'cost_raw' => $cost_raw,
                 'price' => 0, // пользователь задает цену услуги вручную
                 'clients' => 0,
                 'tags' => array()
             );
         }
 
-        // Пресеты
-        $presets = array(
-            array(
+        // Подтягиваем процедуры только из OCFilter (oc_ocfilter_* таблицы)
+        $procedures = array();
+        if (!empty($product_ids)) {
+            $product_ids_sql = implode(',', array_map('intval', $product_ids));
+
+            $ocfilterExists = $this->db->query("SHOW TABLES LIKE '" . DB_PREFIX . "oc_ocfilter_filter_value_to_product'");
+            if ($ocfilterExists->num_rows) {
+                // Ищем группу "Види процедур, що виконуються апаратом" по имени (fallback — ID 2)
+                $filter_ids = array();
+                $filterNames = $this->db->query("
+                    SELECT DISTINCT fd.filter_id
+                    FROM `" . DB_PREFIX . "oc_ocfilter_filter_description` fd
+                    WHERE LOWER(fd.name) LIKE '%процедур%'
+                ");
+                foreach ($filterNames->rows as $row) {
+                    $filter_ids[] = (int)$row['filter_id'];
+                }
+                if (empty($filter_ids)) {
+                    $filter_ids[] = 2;
+                }
+
+                $filter_ids_sql = implode(',', $filter_ids);
+
+                // 1) Список процедур (значений) по найденным filter_id
+                $procedure_values = $this->db->query("
+                    SELECT DISTINCT fvd.value_id, fvd.name, fvd.language_id, fvd.filter_id
+                    FROM `" . DB_PREFIX . "oc_ocfilter_filter_value_description` fvd
+                    WHERE fvd.filter_id IN (" . $filter_ids_sql . ")
+                    ORDER BY (fvd.language_id = '" . (int)$language_id . "') DESC, fvd.name ASC
+                ");
+
+                // 2) Привязки процедур к товарам из группы
+                $device_tags = array();
+                $value_filter_sql = '';
+                if ($procedure_values->num_rows) {
+                    $value_ids = array();
+                    foreach ($procedure_values->rows as $row) {
+                        $value_ids[] = (int)$row['value_id'];
+                    }
+                    $value_filter_sql = " AND fvp.value_id IN (" . implode(',', $value_ids) . ")";
+                }
+
+                $ocfBindings = $this->db->query("
+                    SELECT fvp.product_id, fvp.value_id
+                    FROM `" . DB_PREFIX . "oc_ocfilter_filter_value_to_product` fvp
+                    WHERE fvp.product_id IN (" . $product_ids_sql . ")
+                      AND fvp.filter_id IN (" . $filter_ids_sql . ")
+                      " . $value_filter_sql . "
+                ");
+
+                foreach ($ocfBindings->rows as $row) {
+                    $pid = (int)$row['product_id'];
+                    if (!isset($device_tags[$pid])) {
+                        $device_tags[$pid] = array();
+                    }
+                    $device_tags[$pid][] = 'ocf_' . (string)$row['value_id'];
+                }
+
+                foreach ($devices as &$dev) {
+                    $pid = (int)$dev['id'];
+                    if (isset($device_tags[$pid])) {
+                        $dev['tags'] = $device_tags[$pid];
+                    }
+                }
+                unset($dev);
+
+                foreach ($procedure_values->rows as $row) {
+                    $procedures[] = array(
+                        'id' => 'ocf_' . (string)$row['value_id'],
+                        'name' => $row['name']
+                    );
+                }
+
+                // Если в OCFilter ничего не нашли, пробуем классический OcFilter-опции (ocfilter_option_* таблицы)
+                if (empty($procedures)) {
+                    $optExists = $this->db->query("SHOW TABLES LIKE '" . DB_PREFIX . "ocfilter_option_value_to_product'");
+                    if ($optExists->num_rows) {
+                        $option_ids = array();
+                        $optionRows = $this->db->query("
+                            SELECT DISTINCT option_id
+                            FROM `" . DB_PREFIX . "ocfilter_option_description`
+                            WHERE LOWER(name) LIKE '%процедур%'
+                        ");
+                        foreach ($optionRows->rows as $row) {
+                            $option_ids[] = (int)$row['option_id'];
+                        }
+                        if (empty($option_ids)) {
+                            $option_ids[] = 2;
+                        }
+                        $option_ids_sql = implode(',', $option_ids);
+
+                        $valueRows = $this->db->query("
+                            SELECT DISTINCT ovd.option_id, ovd.value_id, ovd.name, ovd.language_id
+                            FROM `" . DB_PREFIX . "ocfilter_option_value_description` ovd
+                            WHERE ovd.option_id IN (" . $option_ids_sql . ")
+                            ORDER BY (ovd.language_id = '" . (int)$language_id . "') DESC, ovd.name ASC
+                        ");
+
+                        $value_filter_sql2 = '';
+                        if ($valueRows->num_rows) {
+                            $value_ids = array();
+                            foreach ($valueRows->rows as $row) {
+                                $value_ids[] = (int)$row['value_id'];
+                            }
+                            $value_filter_sql2 = " AND ovp.value_id IN (" . implode(',', $value_ids) . ")";
+                        }
+
+                        $optBindings = $this->db->query("
+                            SELECT ovp.product_id, ovp.value_id
+                            FROM `" . DB_PREFIX . "ocfilter_option_value_to_product` ovp
+                            WHERE ovp.product_id IN (" . $product_ids_sql . ")
+                              AND ovp.option_id IN (" . $option_ids_sql . ")
+                              " . $value_filter_sql2 . "
+                        ");
+
+                        $device_tags = array();
+                        foreach ($optBindings->rows as $row) {
+                            $pid = (int)$row['product_id'];
+                            if (!isset($device_tags[$pid])) {
+                                $device_tags[$pid] = array();
+                            }
+                            $device_tags[$pid][] = 'ocf_' . (string)$row['value_id'];
+                        }
+                        foreach ($devices as &$dev) {
+                            $pid = (int)$dev['id'];
+                            if (isset($device_tags[$pid])) {
+                                $dev['tags'] = $device_tags[$pid];
+                            }
+                        }
+                        unset($dev);
+
+                        foreach ($valueRows->rows as $row) {
+                            $procedures[] = array(
+                                'id' => 'ocf_' . (string)$row['value_id'],
+                                'name' => $row['name']
+                            );
+                        }
+                    }
+                }
+            }
+        }
+
+        // Пресеты формируем из доступных устройств (jan=1), чтобы ID совпадали
+        $device_ids = array();
+        foreach ($devices as $d) {
+            $device_ids[] = $d['id'];
+        }
+        $presets = array();
+        if (!empty($device_ids)) {
+            $presets[] = array(
                 'id' => 'solo',
                 'name' => 'Одиночный мастер (1 аппарат)',
-                'devices' => array('diode_basic'),
+                'devices' => array_slice($device_ids, 0, 1),
                 'working_days' => 22,
                 'rent' => 12000,
                 'utilities' => 3000
-            ),
-            array(
+            );
+            $presets[] = array(
                 'id' => 'starter',
-                'name' => 'Салон старт (2-3 аппарата)',
-                'devices' => array('diode_basic', 'rf_bipolar', 'el_light'),
+                'name' => 'Салон старт (до 3 аппаратов)',
+                'devices' => array_slice($device_ids, 0, min(3, count($device_ids))),
                 'working_days' => 24,
                 'rent' => 20000,
                 'utilities' => 6000
-            ),
-            array(
+            );
+            $presets[] = array(
                 'id' => 'pro',
-                'name' => 'Серьезный салон (5+ аппаратов)',
-                'devices' => array('diode_basic', 'rf_bipolar', 'el_light', 'co2_fractional', 'coolsculpt'),
+                'name' => 'Серьезный салон (до 5 аппаратов)',
+                'devices' => array_slice($device_ids, 0, min(5, count($device_ids))),
                 'working_days' => 26,
                 'rent' => 35000,
                 'utilities' => 9000
-            )
-        );
+            );
+        }
 
         $data['ml_salon_calc'] = array(
             'version' => self::VERSION,
@@ -156,6 +300,23 @@ class ControllerExtensionModuleMlSalonCalc extends Controller {
         $data['content_top'] = $this->load->controller('common/content_top');
         $data['content_bottom'] = $this->load->controller('common/content_bottom');
         $data['footer'] = $this->load->controller('common/footer');
+
+        // В отладочном режиме можно увидеть собранные процедуры/связки
+        if (isset($this->request->get['debug'])) {
+            header('Content-Type: text/plain; charset=utf-8');
+            echo "ml_salon_calc version: " . self::VERSION . "\n\n";
+            echo "Devices (" . count($devices) . "):\n";
+            print_r($devices);
+            echo "\nProcedures (" . count($procedures) . "):\n";
+            print_r($procedures);
+            if (isset($filter_ids)) {
+                echo "\nFilter IDs used: " . implode(',', $filter_ids) . "\n";
+            }
+            if (isset($option_ids)) {
+                echo "\nOption IDs used: " . implode(',', $option_ids) . "\n";
+            }
+            exit;
+        }
 
         $this->response->setOutput($this->load->view('extension/module/ml_salon_calc', $data));
     }

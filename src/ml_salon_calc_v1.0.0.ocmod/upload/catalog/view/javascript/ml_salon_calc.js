@@ -1,13 +1,10 @@
 ;(function() {
-  if (!window.MLSalonCalcConfig) return;
-  var cfg = window.MLSalonCalcConfig;
+  var cfg = null;
   var devicesById = {};
-  (cfg.devices || []).forEach(function(d) { devicesById[d.id] = d; });
-
   var state = {
-    workingDays: cfg.defaults.working_days || 24,
-    rent: cfg.defaults.rent || 0,
-    utilities: cfg.defaults.utilities || 0,
+    workingDays: 24,
+    rent: 0,
+    utilities: 0,
     devices: []
   };
 
@@ -16,6 +13,24 @@
   function qs(id) { return document.getElementById(id); }
 
   function init() {
+    if (!window.MLSalonCalcConfig) {
+      setTimeout(init, 50);
+      return;
+    }
+    cfg = window.MLSalonCalcConfig;
+    devicesById = {};
+    (cfg.devices || []).forEach(function(d) {
+      // cost_raw приоритетен как число, cost — форматированная строка
+      devicesById[d.id] = {
+        id: d.id,
+        name: d.name,
+        costRaw: typeof d.cost_raw !== 'undefined' ? d.cost_raw : (parseFloat(d.cost) || 0),
+        costLabel: d.cost || ''
+      };
+    });
+    state.workingDays = cfg.defaults && cfg.defaults.working_days ? cfg.defaults.working_days : 24;
+    state.rent = cfg.defaults && cfg.defaults.rent ? cfg.defaults.rent : 0;
+    state.utilities = cfg.defaults && cfg.defaults.utilities ? cfg.defaults.utilities : 0;
     els.presets = qs('ml-salon-presets');
     els.procedures = qs('ml-salon-procedures');
     els.suggestions = qs('ml-salon-suggestions');
@@ -138,6 +153,8 @@
     });
     if (!skipRender) {
       renderDevices();
+      syncProceduresFromDevices();
+      updateSuggestions();
       recalc();
     }
   }
@@ -145,6 +162,8 @@
   function removeDevice(id) {
     state.devices = state.devices.filter(function(d) { return d.id !== id; });
     renderDevices();
+    syncProceduresFromDevices();
+    updateSuggestions();
     recalc();
   }
 
@@ -157,7 +176,7 @@
         '<td>' + (meta ? meta.name : d.id) + '</td>',
         '<td><input type="number" class="ml-salon__num" data-field="clients" data-id="' + d.id + '" min="0" step="0.5" value="' + d.clients + '"></td>',
         '<td><input type="number" class="ml-salon__num" data-field="price" data-id="' + d.id + '" min="0" step="100" value="' + d.price + '"></td>',
-        '<td>' + (meta ? formatMoney(meta.cost) : '—') + '</td>',
+        '<td>' + (meta ? (meta.costLabel || formatMoney(meta.costRaw)) : '—') + '</td>',
         '<td data-field="revenue" data-id="' + d.id + '">—</td>',
         '<td><button type="button" class="ml-salon__link" data-remove="' + d.id + '">' + cfg.lang.remove + '</button></td>'
       ].join('');
@@ -172,6 +191,9 @@
         removeDevice(btn.getAttribute('data-remove'));
       });
     });
+
+    syncProceduresFromDevices();
+    updateSuggestions();
   }
 
   function onDeviceInput(e) {
@@ -213,7 +235,7 @@
     state.devices.forEach(function(d) {
       var meta = devicesById[d.id];
       if (!meta) return;
-      totalCapex += meta.cost || 0;
+      totalCapex += meta.costRaw || 0;
       var revenue = (d.clients || 0) * (d.price || 0) * (state.workingDays || 0);
       totalRevenue += revenue;
       var cell = els.deviceRows.querySelector('[data-field="revenue"][data-id="' + d.id + '"]');
@@ -286,5 +308,25 @@
     els.emailStatus.className = 'ml-salon__email-status ' + (isError ? 'is-error' : 'is-ok');
   }
 
-  document.addEventListener('DOMContentLoaded', init);
+  function syncProceduresFromDevices() {
+    var tags = new Set();
+    state.devices.forEach(function(d) {
+      var meta = devicesById[d.id];
+      if (meta && Array.isArray(meta.tags)) {
+        meta.tags.forEach(function(t) { tags.add(t); });
+      }
+    });
+    if (!els.procedures) return;
+    els.procedures.querySelectorAll('input[type="checkbox"]').forEach(function(input) {
+      if (tags.has(input.value)) {
+        input.checked = true;
+      }
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
 })();
