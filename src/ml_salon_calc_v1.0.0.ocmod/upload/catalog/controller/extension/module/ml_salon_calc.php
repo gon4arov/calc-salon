@@ -103,7 +103,7 @@ class ControllerExtensionModuleMlSalonCalc extends Controller {
             );
         }
 
-        // Подтягиваем процедуры только из OCFilter (oc_ocfilter_* таблицы)
+        // Подтягиваем процедуры только из OCFilter (ocfilter_* таблицы)
         $procedures = array();
         if (!empty($product_ids)) {
             $product_ids_sql = implode(',', array_map('intval', $product_ids));
@@ -114,7 +114,7 @@ class ControllerExtensionModuleMlSalonCalc extends Controller {
                 $filter_ids = array();
                 $filterNames = $this->db->query("
                     SELECT DISTINCT fd.filter_id
-                    FROM `" . DB_PREFIX . "oc_ocfilter_filter_description` fd
+                    FROM `" . DB_PREFIX . "ocfilter_filter_description` fd
                     WHERE LOWER(fd.name) LIKE '%процедур%'
                 ");
                 foreach ($filterNames->rows as $row) {
@@ -129,7 +129,7 @@ class ControllerExtensionModuleMlSalonCalc extends Controller {
                 // 1) Список процедур (значений) по найденным filter_id
                 $procedure_values = $this->db->query("
                     SELECT DISTINCT fvd.value_id, fvd.name, fvd.language_id, fvd.filter_id
-                    FROM `" . DB_PREFIX . "oc_ocfilter_filter_value_description` fvd
+                    FROM `" . DB_PREFIX . "ocfilter_filter_value_description` fvd
                     WHERE fvd.filter_id IN (" . $filter_ids_sql . ")
                     ORDER BY (fvd.language_id = '" . (int)$language_id . "') DESC, fvd.name ASC
                 ");
@@ -147,7 +147,7 @@ class ControllerExtensionModuleMlSalonCalc extends Controller {
 
                 $ocfBindings = $this->db->query("
                     SELECT fvp.product_id, fvp.value_id
-                    FROM `" . DB_PREFIX . "oc_ocfilter_filter_value_to_product` fvp
+                    FROM `" . DB_PREFIX . "ocfilter_filter_value_to_product` fvp
                     WHERE fvp.product_id IN (" . $product_ids_sql . ")
                       AND fvp.filter_id IN (" . $filter_ids_sql . ")
                       " . $value_filter_sql . "
