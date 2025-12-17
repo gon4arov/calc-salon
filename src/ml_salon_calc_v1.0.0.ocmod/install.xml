@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<modification>
+    <name>ML Salon Payback Calculator</name>
+    <code>ml_salon_calc_1_0_0</code>
+    <version>1.0.0</version>
+    <author>Oleksandr Honcharov</author>
+    <link>https://medicalaser.com.ua</link>
+
+    <!-- Этот модуль добавляет новые контроллеры/шаблоны и не вносит правок через OCMOD -->
+</modification>

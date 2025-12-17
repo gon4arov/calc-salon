@@ -1,0 +1,36 @@
+.ml-salon__title { margin: 20px 0 10px; font-size: 26px; }
+.ml-salon__intro { color: #555; margin-bottom: 20px; }
+.ml-salon__section { background: #fff; border: 1px solid #e9ecef; border-radius: 8px; padding: 16px; margin-bottom: 18px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+.ml-salon__section-header { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+.ml-salon__section h3 { margin: 0; font-size: 18px; }
+.ml-salon__hint { color: #6c757d; font-size: 13px; }
+.ml-salon__presets { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.ml-salon__preset { border: 1px solid #d0d7de; background: #f8fafc; border-radius: 6px; padding: 8px 12px; cursor: pointer; }
+.ml-salon__globals { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
+.ml-salon__globals label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
+.ml-salon__globals input { padding: 8px; border: 1px solid #ced4da; border-radius: 6px; }
+.ml-salon__procedures { display: flex; flex-wrap: wrap; gap: 8px; }
+.ml-salon__procedure { border: 1px solid #d0d7de; padding: 6px 10px; border-radius: 6px; background: #f8fafc; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+.ml-salon__suggestions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.ml-salon__chip { border: 1px solid #d0d7de; background: #fff; border-radius: 20px; padding: 6px 12px; cursor: pointer; }
+.ml-salon__add { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; margin-bottom: 10px; }
+.ml-salon__add label { display: flex; flex-direction: column; gap: 6px; min-width: 220px; }
+.ml-salon__add select { padding: 8px; border: 1px solid #ced4da; border-radius: 6px; }
+.ml-salon__btn { background: #1f7aec; color: #fff; border: none; border-radius: 6px; padding: 9px 14px; cursor: pointer; }
+.ml-salon__btn:hover { background: #1968c8; }
+.ml-salon__table input { width: 100%; padding: 6px; }
+.ml-salon__num { width: 100%; }
+.ml-salon__link { background: none; border: none; color: #c1121f; cursor: pointer; }
+.ml-salon__totals { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; }
+.ml-salon__card { background: #0d6efd; color: #fff; padding: 12px; border-radius: 8px; }
+.ml-salon__card-label { font-size: 12px; opacity: 0.9; }
+.ml-salon__card-value { font-size: 18px; font-weight: bold; }
+.ml-salon__email { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.ml-salon__email input { padding: 8px; border: 1px solid #ced4da; border-radius: 6px; min-width: 240px; }
+.ml-salon__email-status { min-height: 18px; color: #0f5132; }
+.ml-salon__email-status.is-error { color: #842029; }
+
+@media (max-width: 768px) {
+  .ml-salon__globals { grid-template-columns: 1fr; }
+  .ml-salon__email { flex-direction: column; align-items: flex-start; }
+}
